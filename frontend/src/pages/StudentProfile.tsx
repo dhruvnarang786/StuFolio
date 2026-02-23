@@ -22,9 +22,7 @@ const iconMap: Record<string, any> = {
     Flame, Code, Target, BookOpen, Trophy, GraduationCap, Award, Star,
 };
 
-const activityGrid = Array.from({ length: 52 }, () =>
-    Array.from({ length: 7 }, () => Math.floor(Math.random() * 5))
-);
+// Heatmap logic will be derived from profile data
 
 const StudentProfile = () => {
     const [data, setData] = useState<any>(null);
@@ -69,6 +67,39 @@ const StudentProfile = () => {
         Codeforces: { color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/20" },
         GitHub: { color: "text-gray-300", bg: "bg-gray-400/10 border-gray-400/20" },
     };
+
+    // Generate Heatmap Grid (364 days / 52 weeks)
+    const generateActivityGrid = () => {
+        const grid = Array.from({ length: 52 }, () => Array.from({ length: 7 }, () => 0));
+        const combinedActivity: Record<string, number> = {};
+
+        codingProfiles.forEach((p: any) => {
+            if (p.activityData && typeof p.activityData === 'object') {
+                Object.entries(p.activityData).forEach(([date, count]) => {
+                    combinedActivity[date] = (combinedActivity[date] || 0) + (count as number);
+                });
+            }
+        });
+
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - (52 * 7) + 1);
+
+        const dayOfWeek = startDate.getDay();
+        startDate.setDate(startDate.getDate() - dayOfWeek);
+
+        for (let wi = 0; wi < 52; wi++) {
+            for (let di = 0; di < 7; di++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(startDate.getDate() + (wi * 7) + di);
+                const dateString = currentDate.toISOString().split('T')[0];
+                grid[wi][di] = combinedActivity[dateString] || 0;
+            }
+        }
+        return grid;
+    };
+
+    const activityGrid = generateActivityGrid();
 
     return (
         <DashboardLayout title="My Profile" subtitle="Your academic & coding identity" role="student">

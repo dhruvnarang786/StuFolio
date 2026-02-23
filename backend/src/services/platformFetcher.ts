@@ -7,6 +7,7 @@ interface PlatformStats {
     verified: boolean;
     bio?: string;
     stats: { label: string; value: string }[];
+    activity?: Record<string, number>; // "YYYY-MM-DD" -> count
 }
 
 // ─── LeetCode (GraphQL API) ────────────────────────────
@@ -27,6 +28,9 @@ async function fetchLeetCode(handle: string): Promise<PlatformStats> {
                 profile {
                     ranking
                     aboutMe
+                }
+                userCalendar {
+                    submissionCalendar
                 }
             }
             userContestRanking(username: $username) {
@@ -65,6 +69,18 @@ async function fetchLeetCode(handle: string): Promise<PlatformStats> {
         const ranking = user.profile?.ranking || null;
         const aboutMe = user.profile?.aboutMe || "";
 
+        // Process LeetCode activity (submissionCalendar is a JSON string of { "unix_timestamp": count })
+        const activity: Record<string, number> = {};
+        try {
+            const cal = JSON.parse(user.userCalendar?.submissionCalendar || "{}");
+            Object.entries(cal).forEach(([ts, count]) => {
+                const date = new Date(parseInt(ts) * 1000).toISOString().split("T")[0];
+                activity[date] = (activity[date] || 0) + (count as number);
+            });
+        } catch (e) {
+            console.error("LeetCode calendar parse error:", e);
+        }
+
         const stats: { label: string; value: string }[] = [
             { label: "Problems Solved", value: String(totalSolved) },
             { label: "Easy / Med / Hard", value: `${easy} / ${medium} / ${hard}` },
@@ -74,7 +90,7 @@ async function fetchLeetCode(handle: string): Promise<PlatformStats> {
         if (contests) stats.push({ label: "Contests", value: String(contests) });
         if (ranking) stats.push({ label: "Global Rank", value: `#${ranking.toLocaleString()}` });
 
-        return { verified: true, bio: aboutMe, stats };
+        return { verified: true, bio: aboutMe, stats, activity };
     } catch (err) {
         console.error("LeetCode fetch error:", err);
         return { verified: false, stats: [] };
@@ -101,12 +117,11 @@ async function fetchCodeforces(handle: string): Promise<PlatformStats> {
         const rankName = user.rank || "Unrated";
         const rating = user.rating || 0;
         const maxRating = user.maxRating || 0;
-
-        // Codeforces doesn't have a bio, users can use First Name for verification
         const bio = user.firstName || "";
 
-        // Fetch user submissions to count problems
         let problemsSolved = 0;
+        const activity: Record<string, number> = {};
+
         try {
             const subRes = await fetch(`https://codeforces.com/api/user.status?handle=${username}`);
             if (subRes.ok) {
@@ -114,15 +129,17 @@ async function fetchCodeforces(handle: string): Promise<PlatformStats> {
                 if (subData.status === "OK") {
                     const solved = new Set<string>();
                     for (const sub of subData.result) {
+                        const date = new Date(sub.creationTimeSeconds * 1000).toISOString().split("T")[0];
                         if (sub.verdict === "OK" && sub.problem) {
                             solved.add(`${sub.problem.contestId}-${sub.problem.index}`);
+                            activity[date] = (activity[date] || 0) + 1;
                         }
                     }
                     problemsSolved = solved.size;
                 }
             }
         } catch {
-            // Submissions fetch is optional
+            // Optional fetch
         }
 
         const stats: { label: string; value: string }[] = [
@@ -135,7 +152,7 @@ async function fetchCodeforces(handle: string): Promise<PlatformStats> {
             stats.push({ label: "Contribution", value: String(user.contribution) });
         }
 
-        return { verified: true, bio, stats };
+        return { verified: true, bio, stats, activity };
     } catch (err) {
         console.error("Codeforces fetch error:", err);
         return { verified: false, stats: [] };

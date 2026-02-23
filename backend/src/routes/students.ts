@@ -126,6 +126,7 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
                 stats: JSON.parse(cp.stats),
                 verified: cp.verified,
                 lastSynced: cp.lastSynced,
+                activityData: cp.activityData,
             })),
             badges: s.badges.map((b) => ({
                 label: b.label,
@@ -334,7 +335,8 @@ router.post("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), as
                     handle: handle.replace(/^@/, ''),
                     stats: statsJson,
                     verified: true,
-                    lastSynced: new Date()
+                    lastSynced: new Date(),
+                    activityData: result.activity || {},
                 },
             });
         } else {
@@ -345,7 +347,8 @@ router.post("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), as
                     handle: handle.replace(/^@/, ''),
                     stats: statsJson,
                     verified: true,
-                    lastSynced: new Date()
+                    lastSynced: new Date(),
+                    activityData: result.activity || {},
                 },
             });
         }
@@ -380,7 +383,11 @@ router.post("/me/coding-profiles/refresh", authenticateToken, requireRole("STUDE
             if (result.verified) {
                 await prisma.codingProfile.update({
                     where: { id: cp.id },
-                    data: { stats: JSON.stringify(result.stats) },
+                    data: {
+                        stats: JSON.stringify(result.stats),
+                        activityData: result.activity || {},
+                        lastSynced: new Date(),
+                    },
                 });
                 updated.push({ platform: cp.platform, handle: cp.handle, stats: result.stats });
             } else {
@@ -464,6 +471,7 @@ router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthReq
                 platform: cp.platform,
                 handle: cp.handle,
                 stats: JSON.parse(cp.stats),
+                activityData: cp.activityData,
             })),
             badges: (student as any).badges.map((b: any) => ({ label: b.label, earned: b.earned })),
             skills: (student as any).skills.map((ss: any) => ss.skill.name),
