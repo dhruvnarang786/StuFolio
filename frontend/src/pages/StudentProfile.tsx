@@ -70,21 +70,18 @@ const StudentProfile = () => {
 
     // Generate Heatmap Grid (364 days / 52 weeks)
     const generateActivityGrid = () => {
-        const grid = Array.from({ length: 52 }, () => Array.from({ length: 7 }, () => 0));
+        const grid: { count: number; date: string }[][] = Array.from({ length: 52 }, () =>
+            Array.from({ length: 7 }, () => ({ count: 0, date: "" }))
+        );
         const combinedActivity: Record<string, number> = {};
-
-        console.log("🧩 Coding Profiles:", codingProfiles);
 
         codingProfiles.forEach((p: any) => {
             if (p.activityData && typeof p.activityData === 'object') {
-                console.log(`📊 Activity for ${p.platform}:`, p.activityData);
                 Object.entries(p.activityData).forEach(([date, count]) => {
                     combinedActivity[date] = (combinedActivity[date] || 0) + (count as number);
                 });
             }
         });
-
-        console.log("📅 Combined Activity Map:", combinedActivity);
 
         const today = new Date();
         const startDate = new Date(today);
@@ -93,17 +90,17 @@ const StudentProfile = () => {
         const dayOfWeek = startDate.getDay();
         startDate.setDate(startDate.getDate() - dayOfWeek);
 
-        let activeCount = 0;
         for (let wi = 0; wi < 52; wi++) {
             for (let di = 0; di < 7; di++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + (wi * 7) + di);
                 const dateString = currentDate.toISOString().split('T')[0];
-                grid[wi][di] = combinedActivity[dateString] || 0;
-                if (grid[wi][di] > 0) activeCount++;
+                grid[wi][di] = {
+                    count: combinedActivity[dateString] || 0,
+                    date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                };
             }
         }
-        console.log(`✅ Heatmap generated. Days with activity: ${activeCount}`);
         return grid;
     };
 
@@ -235,13 +232,18 @@ const StudentProfile = () => {
                                 {week.map((day, di) => (
                                     <div
                                         key={di}
-                                        className={`h-[11px] w-[11px] rounded-[2px] ${day === 0 ? "bg-secondary" :
-                                            day === 1 ? "bg-primary/20" :
-                                                day === 2 ? "bg-primary/40" :
-                                                    day === 3 ? "bg-primary/60" :
+                                        title={`${day.count} submissions on ${day.date}`}
+                                        className={`h-[11px] w-[11px] rounded-[2px] transition-all hover:ring-1 hover:ring-primary/50 cursor-pointer group relative ${day.count === 0 ? "bg-secondary" :
+                                            day.count === 1 ? "bg-primary/20" :
+                                                day.count === 2 ? "bg-primary/40" :
+                                                    day.count === 3 ? "bg-primary/60" :
                                                         "bg-primary"
                                             }`}
-                                    />
+                                    >
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded pointer-events-none opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 transition-opacity">
+                                            {day.count} submissions on {day.date}
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         ))}
