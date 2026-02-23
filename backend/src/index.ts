@@ -22,7 +22,7 @@ app.use(express.json());
 
 // Health check
 app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.json({ status: "ok", version: "v1.0.1", timestamp: new Date().toISOString() });
 });
 
 // Routes
