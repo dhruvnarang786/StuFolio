@@ -28,16 +28,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const initAuth = async () => {
             const token = api.getToken();
+            const savedUser = localStorage.getItem("stufolio_user");
+
+            // Optimistically set user if we have data
+            if (token && savedUser) {
+                try {
+                    console.log("🔄 Found local session, loading optimistically...");
+                    setUser(JSON.parse(savedUser));
+                } catch (e) {
+                    console.error("❌ Failed to parse saved user", e);
+                }
+            }
+
             if (token) {
+                console.log("🔍 Verifying session with backend...");
                 const verifiedUser = await api.verifySession();
                 if (verifiedUser) {
+                    console.log("✅ Session verified successfully.");
                     setUser(verifiedUser);
                     localStorage.setItem("stufolio_user", JSON.stringify(verifiedUser));
                 } else {
-                    // verifySession handles logout/cleanup
+                    console.warn("⚠️ Session verification failed, logging out.");
                     setUser(null);
                 }
             }
+
             setIsLoading(false);
         };
 
