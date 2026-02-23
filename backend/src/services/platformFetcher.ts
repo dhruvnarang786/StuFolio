@@ -102,8 +102,8 @@ async function fetchCodeforces(handle: string): Promise<PlatformStats> {
         const rating = user.rating || 0;
         const maxRating = user.maxRating || 0;
 
-        // Codeforces doesn't have a bio, users often use city or organization for verification
-        const bio = `${user.organization || ""} ${user.city || ""}`.trim();
+        // Codeforces doesn't have a bio, users can use First Name for verification
+        const bio = user.firstName || "";
 
         // Fetch user submissions to count problems
         let problemsSolved = 0;

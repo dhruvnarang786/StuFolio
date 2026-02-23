@@ -104,12 +104,14 @@ model Attendance {
 
 // ─── Coding Profiles ─────────────────────────────────────
 model CodingProfile {
-  id        String  @id @default(uuid())
-  studentId String
-  student   Student @relation(fields: [studentId], references: [id])
-  platform  String  // LeetCode | Codeforces | GitHub
-  handle    String
-  stats     String  // JSON string: [{label, value}]
+  id         String   @id @default(uuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id])
+  platform   String   // LeetCode | Codeforces | GitHub
+  handle     String
+  stats      String   // JSON string: [{label, value}]
+  verified   Boolean  @default(false)
+  lastSynced DateTime @default(now())
 
   @@unique([studentId, platform])
 }

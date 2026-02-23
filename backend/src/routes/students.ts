@@ -38,9 +38,12 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
 
         // Coding profile summary
         const codingProfiles = s.codingProfiles.map((cp) => ({
+            id: cp.id,
             platform: cp.platform,
             handle: cp.handle,
             stats: JSON.parse(cp.stats),
+            verified: cp.verified,
+            lastSynced: cp.lastSynced,
         }));
 
         // Warnings based on attendance
@@ -117,9 +120,12 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
             },
             semesterCGPAs: s.semesterCGPAs.map((sc) => ({ sem: sc.semester, cgpa: sc.cgpa })),
             codingProfiles: s.codingProfiles.map((cp) => ({
+                id: cp.id,
                 platform: cp.platform,
                 handle: cp.handle,
                 stats: JSON.parse(cp.stats),
+                verified: cp.verified,
+                lastSynced: cp.lastSynced,
             })),
             badges: s.badges.map((b) => ({
                 label: b.label,
@@ -234,6 +240,9 @@ router.get("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), asy
                 platform,
                 handle: existing?.handle || "",
                 connected: !!existing,
+                verified: existing?.verified || false,
+                lastSynced: existing?.lastSynced,
+                stats: existing ? JSON.parse(existing.stats) : undefined,
             };
         });
 
@@ -321,7 +330,12 @@ router.post("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), as
         if (existing) {
             profile = await prisma.codingProfile.update({
                 where: { id: existing.id },
-                data: { handle: handle.replace(/^@/, ''), stats: statsJson },
+                data: {
+                    handle: handle.replace(/^@/, ''),
+                    stats: statsJson,
+                    verified: true,
+                    lastSynced: new Date()
+                },
             });
         } else {
             profile = await prisma.codingProfile.create({
@@ -330,6 +344,8 @@ router.post("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), as
                     platform,
                     handle: handle.replace(/^@/, ''),
                     stats: statsJson,
+                    verified: true,
+                    lastSynced: new Date()
                 },
             });
         }
