@@ -219,7 +219,7 @@ const StudentProfile = () => {
                 <p className="text-xs text-muted-foreground mb-4">Your problem-solving activity over the past year</p>
                 <div className="relative">
                     <div className="overflow-x-auto pb-2">
-                        <div className="flex gap-[2px] sm:gap-[3px]" style={{ width: 'max-content' }}>
+                        <div className="flex gap-[2px] sm:gap-[3px] mx-auto" style={{ width: 'max-content' }}>
                             {activityGrid.map((week, wi) => (
                                 <div key={wi} className="flex flex-col gap-[2px] sm:gap-[3px]">
                                     {week.map((day, di) => (
