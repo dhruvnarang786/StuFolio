@@ -257,7 +257,7 @@ const StudentProfile = () => {
                 >
                     <h3 className="font-display font-semibold text-foreground mb-1 text-sm sm:text-base">Badges</h3>
                     <p className="text-xs text-muted-foreground mb-4">Achievements and milestones</p>
-                    <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {badges.map((badge) => (
                             <div
                                 key={badge.label}

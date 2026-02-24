@@ -162,7 +162,7 @@ const LeaderboardPage = () => {
                   <tr className="border-b border-border">
                     <th className="text-left text-[11px] font-medium text-muted-foreground px-3 sm:px-4 py-3">Rank</th>
                     <th className="text-left text-[11px] font-medium text-muted-foreground px-3 sm:px-4 py-3">Student</th>
-                    <th className="hidden xs:table-cell text-left text-[11px] font-medium text-muted-foreground px-3 sm:px-4 py-3">Problems</th>
+                    <th className="table-cell text-left text-[11px] font-medium text-muted-foreground px-3 sm:px-4 py-3">Problems</th>
                     <th className="hidden sm:table-cell text-left text-[11px] font-medium text-muted-foreground px-4 py-3">CGPA</th>
                     <th className="text-left text-[11px] font-medium text-muted-foreground px-3 sm:px-4 py-3">Score</th>
                     <th className="hidden md:table-cell text-left text-[11px] font-medium text-muted-foreground px-4 py-3">Streak</th>
@@ -198,7 +198,7 @@ const LeaderboardPage = () => {
                             </div>
                           </div>
                         </td>
-                        <td className="px-3 sm:px-4 py-3.5 text-xs sm:text-sm text-muted-foreground hidden xs:table-cell">{student.problemsSolved}</td>
+                        <td className="px-3 sm:px-4 py-3.5 text-xs sm:text-sm text-muted-foreground table-cell">{student.problemsSolved}</td>
                         <td className="hidden sm:table-cell px-4 py-3.5 text-sm text-muted-foreground">{student.cgpa}</td>
                         <td className="px-3 sm:px-4 py-3.5">
                           <span className="text-xs sm:text-sm font-display font-bold text-gradient-primary">
