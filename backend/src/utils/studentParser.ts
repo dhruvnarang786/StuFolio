@@ -110,7 +110,7 @@ export function parseStudentData(enrollment: string, email: string): ParsedStude
     // 4. Generate a synthetic enrollment string if we didn't have a valid one
     const finalEnrollment = (enrollment && enrollment.length >= 11 && enrollment !== "00000000000")
         ? enrollment
-        : `0${rollNumber.padStart(2, '0')}208027${startYear.toString().slice(-2)}`;
+        : `${rollNumber.padStart(3, '0')}208027${startYear.toString().slice(-2)}`;
 
     return {
         rollNumber,
