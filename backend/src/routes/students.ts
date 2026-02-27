@@ -124,11 +124,19 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
             codingProfiles: s.codingProfiles.map((cp) => {
                 const activityCount = cp.activityData ? Object.keys(cp.activityData as any).length : 0;
                 console.log(`[API] Profile ${cp.platform}: ${activityCount} activity points`);
+
+                let parsedStats = [];
+                try {
+                    parsedStats = JSON.parse(cp.stats);
+                } catch (e) {
+                    console.error(`[API] Failed to parse stats for ${cp.platform}`);
+                }
+
                 return {
                     id: cp.id,
                     platform: cp.platform,
                     handle: cp.handle,
-                    stats: JSON.parse(cp.stats),
+                    stats: parsedStats,
                     verified: cp.verified,
                     lastSynced: cp.lastSynced,
                     activityData: cp.activityData,

@@ -14,8 +14,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const allowedOrigins = [
+    "http://localhost:8080",
+    "http://localhost:5173",
+    process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
+
 app.use(cors({
-    origin: true, // During deployment, allow all origins for testing
+    origin: allowedOrigins,
     credentials: true,
 }));
 app.use(express.json());

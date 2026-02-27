@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, GraduationCap, Users, Shield, Sparkles, Code, BarChart3, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMsal } from "@azure/msal-react";
+import { loginRequest } from "../authConfig";
 
 const LoginPage = () => {
+  const { instance } = useMsal();
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<"student" | "mentor">("student");
   const [email, setEmail] = useState("");
@@ -17,12 +20,20 @@ const LoginPage = () => {
   const [section, setSection] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [msalLoading, setMsalLoading] = useState(false);
   const navigate = useNavigate();
-  const { login, register, isAuthenticated, user } = useAuth();
+  const { login, msalLogin, register, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate(user.role === "MENTOR" ? "/mentor" : "/dashboard");
+    }
+
+    // Check for errors from main.tsx (MSAL redirect handling)
+    const pendingError = sessionStorage.getItem("msal_error");
+    if (pendingError) {
+      setError(pendingError);
+      sessionStorage.removeItem("msal_error");
     }
   }, [isAuthenticated, user, navigate]);
 
@@ -55,6 +66,19 @@ const LoginPage = () => {
       setError(errorMsg);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMsalLogin = async () => {
+    setError("");
+    setMsalLoading(true);
+    console.log("🚀 Starting MSAL Login Redirect...");
+    try {
+      await instance.loginRedirect(loginRequest);
+    } catch (err: any) {
+      console.error("❌ MSAL Login Failed:", err);
+      setError(`Microsoft login failed: ${err.message || "Unknown error"}`);
+      setMsalLoading(false);
     }
   };
 
@@ -154,6 +178,37 @@ const LoginPage = () => {
               {error}
             </div>
           )}
+
+          <Button
+            type="button"
+            onClick={handleMsalLogin}
+            disabled={msalLoading || loading}
+            variant="outline"
+            className="w-full h-11 mb-6 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 border-border bg-secondary/30 hover:bg-secondary/60 text-foreground"
+          >
+            {msalLoading ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Connecting...</>
+            ) : (
+              <>
+                <svg viewBox="0 0 21 21" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#f25022" d="M1 1h9v9H1z" />
+                  <path fill="#00a4ef" d="M11 1h9v9h-9z" />
+                  <path fill="#7fba00" d="M1 11h9v9H1z" />
+                  <path fill="#ffb900" d="M11 11h9v9h-9z" />
+                </svg>
+                Sign in with College Microsoft Account
+              </>
+            )}
+          </Button>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+            </div>
+          </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin && (

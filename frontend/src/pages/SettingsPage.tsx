@@ -94,28 +94,29 @@ const SettingsPage = () => {
     useEffect(() => {
         const fetchStudentData = async () => {
             try {
-                const [profilesData, codeData, profileResult] = await Promise.all([
-                    api.getCodingProfiles(),
-                    api.getVerificationCode(),
-                    api.getStudentProfile()
-                ]);
-                setProfiles(profilesData);
-                setVCode(codeData.code);
+                // Fetch independently to prevent one failure from breaking the whole page
+                api.getCodingProfiles().then(profilesData => setProfiles(profilesData)).catch(e => console.error(e));
+                api.getVerificationCode().then(codeData => setVCode(codeData.code)).catch(e => console.error(e));
 
-                if (profileResult && profileResult.profile) {
-                    const p = profileResult.profile;
-                    setProfileForm({
-                        name: p.name || "",
-                        enrollment: p.enrollment || "",
-                        branch: p.branch || "",
-                        section: p.section || "",
-                        semester: p.semester || "",
-                        year: p.year || "",
-                        cgpa: p.cgpa?.toString() || "",
-                        teacherId: "",
-                        department: "",
-                        designation: "",
-                    });
+                try {
+                    const profileResult = await api.getStudentProfile();
+                    if (profileResult && profileResult.profile) {
+                        const p = profileResult.profile;
+                        setProfileForm({
+                            name: p.name || "",
+                            enrollment: p.enrollment || "",
+                            branch: p.branch || "",
+                            section: p.section || "",
+                            semester: p.semester || "",
+                            year: p.year || "",
+                            cgpa: p.cgpa?.toString() || "",
+                            teacherId: "",
+                            department: "",
+                            designation: "",
+                        });
+                    }
+                } catch (profileErr) {
+                    console.error("Failed to fetch primary profile data:", profileErr);
                 }
             } catch (err) {
                 console.error("Failed to load student settings data:", err);
