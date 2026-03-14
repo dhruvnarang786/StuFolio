@@ -156,7 +156,7 @@ const MentorAttendancePage = () => {
                                     <Button
                                         variant={"outline"}
                                         className={cn(
-                                            "w-full h-11 justify-start text-left font-medium rounded-xl border-border px-3",
+                                            "w-full h-11 justify-start text-left font-medium rounded-xl border-border px-3 hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all duration-200",
                                             !selectedDate && "text-muted-foreground"
                                         )}
                                     >
