@@ -23,6 +23,7 @@ router.get("/dashboard", authenticateToken, requireRole("MENTOR"), async (req: A
                 attendances: { include: { subject: true } },
                 codingProfiles: true,
             },
+            orderBy: { enrollment: 'asc' },
         });
 
         const totalStudents = students.length;
@@ -87,6 +88,7 @@ router.get("/dashboard", authenticateToken, requireRole("MENTOR"), async (req: A
                 cgpa: s.cgpa,
                 problems: totalProblems,
                 attendance: attPct,
+                enrollment: s.enrollment,
                 status: attPct < 75 ? "danger" : s.cgpa < 6 ? "warning" : "ok",
                 trend: s.cgpa >= 8 ? "up" : s.cgpa >= 7 ? "same" : "down",
             };
@@ -138,7 +140,7 @@ router.get("/students", authenticateToken, requireRole("MENTOR"), async (req: Au
                 attendances: true,
                 codingProfiles: true,
             },
-            orderBy: { cgpa: "desc" },
+            orderBy: { enrollment: "asc" },
         });
 
         return res.json(

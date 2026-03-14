@@ -277,8 +277,11 @@ const MentorDashboard = () => {
                   <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center text-xs font-bold text-white shrink-0">
                     {student.name.split(" ").map((n: string) => n[0]).join("")}
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-sm font-medium text-foreground truncate block">{student.name}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground truncate">{student.name}</span>
+                      <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground shrink-0">{student.enrollment}</span>
+                    </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                       <span className="text-[11px] text-muted-foreground">CGPA: {student.cgpa}</span>
                       <span className="text-[11px] text-muted-foreground hidden sm:inline">Problems: {student.problems}</span>
