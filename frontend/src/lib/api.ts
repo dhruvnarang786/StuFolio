@@ -305,8 +305,8 @@ class ApiClient {
     }
 
     // Leaderboard
-    getLeaderboard(tab = "overall") {
-        return this.request<unknown>(`/leaderboard?tab=${tab}`);
+    getLeaderboard(tab = "overall", filter = "all") {
+        return this.request<unknown>(`/leaderboard?tab=${tab}&filter=${filter}`);
     }
 
     // Events

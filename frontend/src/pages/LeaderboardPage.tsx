@@ -42,6 +42,7 @@ const LeaderboardPage = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabType>("overall");
+  const [viewFilter, setViewFilter] = useState<"all" | "my_students">("all");
   const [data, setData] = useState<LeaderboardStudent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +50,7 @@ const LeaderboardPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const result = await api.getLeaderboard(activeTab);
+        const result = await api.getLeaderboard(activeTab, viewFilter);
         setData(result as LeaderboardStudent[]);
       } catch (err) {
         console.error("Failed to load leaderboard:", err);
@@ -58,7 +59,7 @@ const LeaderboardPage = () => {
       }
     };
     fetchData();
-  }, [activeTab]);
+  }, [activeTab, viewFilter]);
 
   const filtered = data.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -68,21 +69,42 @@ const LeaderboardPage = () => {
 
   return (
     <DashboardLayout title="Leaderboard" subtitle="Performance Rankings" role={role}>
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === tab.key
-              ? "bg-primary/10 text-primary border border-primary/30"
-              : "text-muted-foreground border border-border hover:bg-secondary/50 hover:text-foreground"
-              }`}
-          >
-            <tab.icon className="h-3.5 w-3.5" />
-            {tab.label}
-          </button>
-        ))}
+      {/* Tabs & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === tab.key
+                ? "bg-primary/10 text-primary border border-primary/30"
+                : "text-muted-foreground border border-border hover:bg-secondary/50 hover:text-foreground"
+                }`}
+            >
+              <tab.icon className="h-3.5 w-3.5" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {role === "mentor" && (
+          <div className="flex bg-secondary/50 p-1 rounded-xl self-start sm:self-auto border border-border">
+            <button
+              onClick={() => setViewFilter("all")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              All Students
+            </button>
+            <button
+              onClick={() => setViewFilter("my_students")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "my_students" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              My Section
+            </button>
+          </div>
+        )}
       </div>
 
       {loading ? (

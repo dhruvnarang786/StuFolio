@@ -7,9 +7,23 @@ const router = Router();
 // GET /api/leaderboard — ranked students (privacy-safe)
 router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
     try {
-        const { tab = "overall" } = req.query;
+        const { tab = "overall", filter = "all" } = req.query;
+
+        let whereClause: any = {};
+
+        if (filter === "my_students" && req.user?.role === "MENTOR") {
+            const mentor = await prisma.mentor.findUnique({
+                where: { userId: req.user.userId },
+                select: { section: true }
+            });
+
+            if (mentor?.section) {
+                whereClause.section = mentor.section;
+            }
+        }
 
         const students = await prisma.student.findMany({
+            where: whereClause,
             include: {
                 user: { select: { name: true } },
                 codingProfiles: true,
