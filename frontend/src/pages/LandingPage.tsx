@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const features = [
   {
@@ -127,6 +128,9 @@ const LandingPage = () => {
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
             <a href="#stats" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Stats</a>
+
+            <ThemeToggle />
+
             {isAuthenticated ? (
               <Link to={user?.role === "MENTOR" ? "/mentor" : "/dashboard"}>
                 <Button size="sm" className="bg-gradient-primary text-white hover:opacity-90 shadow-glow px-6">

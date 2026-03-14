@@ -8,6 +8,7 @@ import { ArrowRight, GraduationCap, Users, Shield, Sparkles, Code, BarChart3, Lo
 import { useAuth } from "@/contexts/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "../authConfig";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LoginPage = () => {
   const { instance } = useMsal();
@@ -141,6 +142,10 @@ const LoginPage = () => {
               </div>
               <span className="font-display text-xl font-bold text-foreground tracking-tight">StuFolio</span>
             </Link>
+          </div>
+
+          <div className="flex justify-end mb-4">
+            <ThemeToggle />
           </div>
 
           <h1 className="text-2xl font-display font-bold text-foreground mb-1">
