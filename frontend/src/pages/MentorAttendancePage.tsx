@@ -15,6 +15,14 @@ import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Student {
     id: string;
@@ -39,19 +47,21 @@ const MentorAttendancePage = () => {
     const [students, setStudents] = useState<Student[]>([]);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [attendanceMap, setAttendanceMap] = useState<Record<string, Record<string, string>>>({});
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+
     useEffect(() => {
         fetchSheetData();
-    }, [date]);
+    }, [dateStr]);
 
     const fetchSheetData = async () => {
         setLoading(true);
         try {
-            const result = await api.getAttendanceForDay(date);
+            const result = await api.getAttendanceForDay(dateStr);
             setStudents(result.students);
             setSubjects(result.subjects);
 
@@ -103,7 +113,7 @@ const MentorAttendancePage = () => {
                 });
             });
 
-            await api.submitAttendanceForDay(date, flattenedRecords);
+            await api.submitAttendanceForDay(dateStr, flattenedRecords);
             toast.success("Attendance sheet saved successfully");
             fetchSheetData(); // Refresh to ensure sync
         } catch (err) {
@@ -141,15 +151,28 @@ const MentorAttendancePage = () => {
                     <div className="flex flex-col md:flex-row gap-6 items-end">
                         <div className="w-full md:w-64">
                             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-2 px-1">Selected Date</label>
-                            <div className="relative">
-                                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                    className="w-full h-11 rounded-xl border border-border bg-background pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                                />
-                            </div>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full h-11 justify-start text-left font-medium rounded-xl border-border px-3",
+                                            !selectedDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => date && setSelectedDate(date)}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="w-full md:flex-1">
                             <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-2 px-1">Search Students</label>
@@ -200,10 +223,10 @@ const MentorAttendancePage = () => {
                                                         value={status}
                                                         onChange={(e) => handleStatusChange(student.id, subject.id, e.target.value)}
                                                         className={`w-full max-w-[120px] h-9 rounded-lg border text-[11px] font-bold px-2 focus:outline-none transition-all cursor-pointer ${status === "PRESENT"
-                                                                ? "bg-accent/10 border-accent text-accent"
-                                                                : status === "ABSENT"
-                                                                    ? "bg-destructive/10 border-destructive text-destructive"
-                                                                    : "bg-secondary/50 border-border text-muted-foreground opacity-60"
+                                                            ? "bg-accent/10 border-accent text-accent"
+                                                            : status === "ABSENT"
+                                                                ? "bg-destructive/10 border-destructive text-destructive"
+                                                                : "bg-secondary/50 border-border text-muted-foreground opacity-60"
                                                             }`}
                                                     >
                                                         <option value="PRESENT">Present</option>
