@@ -112,7 +112,7 @@ const StudentProfile = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-border bg-card overflow-hidden mb-8"
             >
-                <div className="h-32 bg-gradient-to-r from-primary/20 via-purple-500/15 to-accent/10 relative">
+                <div className="h-32 bg-gradient-to-r from-primary/20 via-orange-500/15 to-accent/10 relative">
                     <div className="absolute inset-0 grid-pattern opacity-20" />
                 </div>
                 <div className="px-4 sm:px-6 pb-6 -mt-10 sm:-mt-12">

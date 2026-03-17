@@ -89,7 +89,7 @@ const AIAnalysis = () => {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-purple-500/5 to-accent/5 p-6 mb-8"
+                className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-accent/5 p-6 mb-8"
             >
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                     <div className="h-20 w-20 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-glow-lg shrink-0">
@@ -268,7 +268,7 @@ const AIAnalysis = () => {
                     className="rounded-xl border border-border bg-card p-6"
                 >
                     <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="h-5 w-5 text-purple-400" />
+                        <Sparkles className="h-5 w-5 text-emerald-500" />
                         <h3 className="font-display font-semibold text-foreground">Why This Changed</h3>
                     </div>
                     <p className="text-xs text-muted-foreground mb-4">Explainable AI feedback on your performance</p>

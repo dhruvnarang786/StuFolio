@@ -230,7 +230,7 @@ const StudentDashboard = () => {
               <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
               <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${stat.accent === "primary" ? "bg-primary/10 text-primary" :
                 stat.accent === "accent" ? "bg-accent/10 text-accent" :
-                  stat.accent === "chart-3" ? "bg-purple-500/10 text-purple-400" :
+                  stat.accent === "chart-3" ? "bg-orange-500/10 text-orange-400" :
                     "bg-warning/10 text-warning"
                 }`}>
                 <stat.icon className="h-4 w-4" />
@@ -247,7 +247,7 @@ const StudentDashboard = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-purple-500/5 to-transparent p-5 mb-8"
+        className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-orange-500/5 to-transparent p-5 mb-8"
       >
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shrink-0">

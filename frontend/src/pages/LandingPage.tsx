@@ -26,7 +26,7 @@ const features = [
     icon: BarChart3,
     title: "Real-Time Dashboard",
     description: "Track CGPA, coding stats, and academic growth with beautiful live dashboards.",
-    gradient: "from-blue-500/20 to-indigo-500/20",
+    gradient: "from-emerald-500/20 to-teal-500/20",
   },
   {
     icon: Code,
@@ -44,13 +44,13 @@ const features = [
     icon: Brain,
     title: "AI-Powered Analysis",
     description: "Get predictive insights, weakness identification, and personalized study plans.",
-    gradient: "from-purple-500/20 to-pink-500/20",
+    gradient: "from-emerald-500/20 to-green-500/20",
   },
   {
     icon: Shield,
     title: "Mentor Dashboard",
     description: "Mentors track student health, identify at-risk students, and view batch analytics.",
-    gradient: "from-cyan-500/20 to-blue-500/20",
+    gradient: "from-teal-500/20 to-cyan-500/20",
   },
   {
     icon: Calendar,

@@ -6,8 +6,8 @@
 
 @layer base {
   :root {
-    /* ── Light backgrounds ── */
-    --background: 210 20% 98%;
+    /* ── Light backgrounds (Crisp White) ── */
+    --background: 0 0% 100%;
     --foreground: 220 14% 10%;
 
     --card: 0 0% 100%;
@@ -16,25 +16,25 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 14% 10%;
 
-    /* ── Color Palette ── */
-    --primary: 234 89% 56%;
+    /* ── Color Palette (Emerald & Slate) ── */
+    --primary: 160 84% 39%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
     --secondary-foreground: 220 14% 30%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 172 66% 40%;
+    --accent: 180 70% 40%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 234 89% 56%;
+    --ring: 160 84% 39%;
 
     --radius: 0.75rem;
 
@@ -54,19 +54,19 @@
     --info: 199 89% 48%;
     --info-foreground: 199 89% 10%;
 
-    /* ── Chart palette ── */
-    --chart-1: 234 89% 56%;
-    --chart-2: 172 66% 40%;
-    --chart-3: 258 58% 56%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 347 60% 52%;
+    /* ── Chart palette (Cool/Green tones) ── */
+    --chart-1: 160 84% 39%;
+    --chart-2: 180 70% 40%;
+    --chart-3: 200 80% 45%;
+    --chart-4: 140 60% 45%;
+    --chart-5: 220 70% 50%;
 
     /* ── Gradients ── */
-    --gradient-primary: linear-gradient(135deg, hsl(234 89% 56%), hsl(258 58% 56%));
-    --gradient-accent: linear-gradient(135deg, hsl(172 66% 40%), hsl(199 89% 48%));
-    --gradient-warm: linear-gradient(135deg, hsl(38 92% 50%), hsl(347 60% 52%));
-    --gradient-hero: linear-gradient(160deg, hsl(210 20% 98%) 0%, hsl(220 16% 96%) 50%, hsl(220 14% 94%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(180 70% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(180 70% 40%), hsl(200 80% 45%));
+    --gradient-warm: linear-gradient(135deg, hsl(160 84% 39%), hsl(140 60% 45%));
+    --gradient-hero: linear-gradient(160deg, hsl(0 0% 100%) 0%, hsl(220 20% 98%) 50%, hsl(220 15% 95%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 20% 99%));
     --gradient-mesh: none;
 
     /* ── Shadows (soft, natural) ── */
@@ -77,58 +77,58 @@
 
     /* ── Sidebar ── */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 14% 30%;
-    --sidebar-primary: 234 89% 56%;
+    --sidebar-foreground: 220 14% 10%;
+    --sidebar-primary: 160 84% 39%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 14% 96%;
     --sidebar-accent-foreground: 220 14% 30%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 234 89% 56%;
+    --sidebar-ring: 160 84% 39%;
   }
 
   .dark {
-    /* ── Deep, premium dark midnight ── */
-    --background: 224 71% 3.5%;
+    /* ── Deep, premium slate dark ── */
+    --background: 222 47% 5%;
     --foreground: 210 40% 98%;
 
-    --card: 224 71% 5.5%;
+    --card: 222 47% 7%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 224 71% 4.5%;
+    --popover: 222 47% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 234 89% 62%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 160 84% 45%;
+    --primary-foreground: 222 47% 5%;
 
-    --secondary: 222 47% 10%;
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 222 47% 12%;
+    --secondary-foreground: 210 40% 90%;
 
-    --muted: 222 47% 9%;
+    --muted: 222 47% 10%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 172 66% 45%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 180 70% 45%;
+    --accent-foreground: 222 47% 5%;
 
-    --border: 222 47% 14%;
-    --input: 222 47% 14%;
-    --ring: 234 89% 62%;
+    --border: 222 47% 16%;
+    --input: 222 47% 16%;
+    --ring: 160 84% 45%;
 
     /* ── Dark Glass Tokens ── */
-    --glass-bg: 222 47% 6% / 0.65;
-    --glass-border: 222 47% 15% / 0.5;
-    --glass-strong-bg: 222 47% 5% / 0.85;
-    --glass-strong-border: 222 47% 18% / 0.7;
+    --glass-bg: 222 47% 5% / 0.65;
+    --glass-border: 222 47% 16% / 0.5;
+    --glass-strong-bg: 222 47% 4% / 0.85;
+    --glass-strong-border: 222 47% 20% / 0.7;
 
     /* ── Dark Gradients ── */
-    --gradient-hero: radial-gradient(circle at top, hsl(234 89% 12%), hsl(224 71% 3.5%));
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 8%), hsl(222 47% 10%));
+    --gradient-hero: radial-gradient(circle at top, hsl(160 84% 15%), hsl(222 47% 5%));
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 7%), hsl(222 47% 9%));
 
     /* Chart palette in dark mode */
-    --chart-1: 234 89% 60%;
-    --chart-2: 172 66% 45%;
-    --chart-3: 258 58% 60%;
-    --chart-4: 38 92% 40%;
-    --chart-5: 347 60% 55%;
+    --chart-1: 160 84% 45%;
+    --chart-2: 180 70% 45%;
+    --chart-3: 200 80% 50%;
+    --chart-4: 140 60% 50%;
+    --chart-5: 220 70% 55%;
 
     /* Shadows in dark mode */
     --shadow-glow: 0 4px 6px -1px rgb(0 0 0 / 0.6), 0 2px 4px -2px rgb(0 0 0 / 0.6);
@@ -137,14 +137,14 @@
     --shadow-elevated: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.7);
 
     /* Sidebar in dark mode */
-    --sidebar-background: 224 71% 2.5%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 234 89% 60%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 222 47% 10%;
-    --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 222 47% 12%;
-    --sidebar-ring: 234 89% 60%;
+    --sidebar-background: 222 47% 4%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 160 84% 45%;
+    --sidebar-primary-foreground: 222 47% 5%;
+    --sidebar-accent: 222 47% 12%;
+    --sidebar-accent-foreground: 210 40% 90%;
+    --sidebar-border: 222 47% 14%;
+    --sidebar-ring: 160 84% 45%;
   }
 }
 
@@ -282,7 +282,7 @@
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, hsl(234 89% 56% / 0.2), hsl(258 58% 56% / 0.1), transparent, transparent);
+    background: linear-gradient(135deg, hsl(160 84% 39% / 0.2), hsl(180 70% 40% / 0.1), transparent, transparent);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;

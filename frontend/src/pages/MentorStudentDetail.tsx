@@ -176,7 +176,7 @@ const MentorStudentDetail = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-purple-500/5 to-transparent p-5 mb-8"
+                className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-orange-500/5 to-transparent p-5 mb-8"
             >
                 <div className="flex items-center gap-2 mb-3">
                     <Sparkles className="h-5 w-5 text-primary" />

@@ -64,7 +64,7 @@ const CareerPage = () => {
             >
                 <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                     <div className="relative">
-                        <div className="h-28 w-28 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+                        <div className="h-28 w-28 rounded-2xl bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="text-3xl font-display font-extrabold text-primary">{placementScore}</div>
                                 <div className="text-[10px] text-muted-foreground">out of 100</div>
