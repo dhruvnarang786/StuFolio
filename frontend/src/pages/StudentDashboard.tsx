@@ -138,6 +138,50 @@ const StudentDashboard = () => {
       { title: "No upcoming events", date: "", type: "info", color: "bg-secondary/50 text-muted-foreground" },
     ];
 
+  // Generate Heatmap Grid (364 days / 52 weeks)
+  const generateActivityGrid = (profiles: any[]) => {
+    const grid: { count: number; date: string }[][] = Array.from({ length: 53 }, () =>
+      Array.from({ length: 7 }, () => ({ count: 0, date: "" }))
+    );
+    const combinedActivity: Record<string, number> = {};
+
+    profiles.forEach((p) => {
+      if (p.activityData && typeof p.activityData === 'object') {
+        Object.entries(p.activityData).forEach(([date, count]) => {
+          combinedActivity[date] = (combinedActivity[date] || 0) + (count as number);
+        });
+      }
+    });
+
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
+    
+    // Start of the grid (Sunday, 52 weeks ago)
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - dayOfWeek - (52 * 7));
+
+    for (let wi = 0; wi < 53; wi++) {
+      for (let di = 0; di < 7; di++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + (wi * 7) + di);
+        
+        const y = currentDate.getFullYear();
+        const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const d = String(currentDate.getDate()).padStart(2, '0');
+        const dateString = `${y}-${m}-${d}`;
+
+        grid[wi][di] = {
+          count: combinedActivity[dateString] || 0,
+          date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        };
+      }
+    }
+    return grid;
+  };
+
+  const activityGrid = generateActivityGrid(codingProfiles);
+
   if (loading) {
     return (
       <DashboardLayout title="Dashboard" subtitle="Loading..." role="student">
@@ -216,6 +260,58 @@ const StudentDashboard = () => {
                 ? `Focus areas detected: ${warnings.map((w: any) => w.text.split(" ")[0]).join(", ")}. Keep building your coding streak and attend upcoming classes to strengthen eligibility.`
                 : "Your coding performance is trending upward 📈. Keep up the great work!"}
             </p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Activity Heatmap */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.32 }}
+        className="rounded-xl border border-border bg-card p-4 sm:p-5 mb-8 w-full overflow-hidden"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-display font-semibold text-foreground text-sm mb-0.5">Activity Heatmap</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">Problem-solving activity across all platforms</p>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <span>Less</span>
+            <div className="flex gap-[2px]">
+              <div className="h-2 w-2 rounded-[1px] bg-secondary" />
+              <div className="h-2 w-2 rounded-[1px] bg-primary/20" />
+              <div className="h-2 w-2 rounded-[1px] bg-primary/40" />
+              <div className="h-2 w-2 rounded-[1px] bg-primary/60" />
+              <div className="h-2 w-2 rounded-[1px] bg-primary" />
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+
+        <div className="relative">
+          <div className="overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex gap-[2px] sm:gap-[3px] mx-auto" style={{ width: 'max-content' }}>
+              {activityGrid.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-[2px] sm:gap-[3px]">
+                  {week.map((day, di) => (
+                    <div
+                      key={di}
+                      className={`h-[8px] w-[8px] sm:h-[10px] sm:w-[10px] rounded-[1.5px] transition-all hover:ring-1 hover:ring-primary/50 cursor-pointer group relative ${day.count === 0 ? "bg-secondary/60" :
+                        day.count === 1 ? "bg-primary/20" :
+                          day.count === 2 ? "bg-primary/40" :
+                            day.count === 3 ? "bg-primary/60" :
+                              "bg-primary"
+                        }`}
+                    >
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded pointer-events-none opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 transition-opacity">
+                        {day.count} submissions on {day.date}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </motion.div>

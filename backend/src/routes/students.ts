@@ -2,6 +2,7 @@ import { Router, Response } from "express";
 import prisma from "../lib/prisma";
 import { AuthRequest, authenticateToken, requireRole } from "../middleware/auth";
 import { fetchPlatformStats } from "../services/platformFetcher";
+import { refreshStudentProfiles } from "../services/profileService";
 
 const router = Router();
 
@@ -26,6 +27,11 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
             return res.status(404).json({ error: "Student profile not found" });
         }
 
+        // Trigger background refresh (don't await)
+        refreshStudentProfiles(user.student.id).catch(err => 
+            console.error("[API] Background refresh triggered from /me failed:", err)
+        );
+
         const s = user.student;
 
         // Build dashboard response
@@ -44,6 +50,7 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
             stats: JSON.parse(cp.stats),
             verified: cp.verified,
             lastSynced: cp.lastSynced,
+            activityData: cp.activityData,
         }));
 
         // Warnings based on attendance
@@ -102,6 +109,11 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
         });
 
         if (!user?.student) return res.status(404).json({ error: "Student not found" });
+
+        // Trigger background refresh (don't await)
+        refreshStudentProfiles(user.student.id).catch(err => 
+            console.error("[API] Background refresh triggered from /me/profile failed:", err)
+        );
 
         const s = user.student;
 

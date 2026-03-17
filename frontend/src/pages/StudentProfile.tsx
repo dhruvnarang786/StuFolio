@@ -62,7 +62,7 @@ const StudentProfile = () => {
 
     // Generate Heatmap Grid (364 days / 52 weeks)
     const generateActivityGrid = (profiles: CodingProfile[]) => {
-        const grid: { count: number; date: string }[][] = Array.from({ length: 52 }, () =>
+        const grid: { count: number; date: string }[][] = Array.from({ length: 53 }, () =>
             Array.from({ length: 7 }, () => ({ count: 0, date: "" }))
         );
         const combinedActivity: Record<string, number> = {};
@@ -76,17 +76,23 @@ const StudentProfile = () => {
         });
 
         const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
+        
+        // Start of the grid (Sunday, 52 weeks ago)
         const startDate = new Date(today);
-        startDate.setDate(today.getDate() - (52 * 7) + 1);
+        startDate.setDate(today.getDate() - dayOfWeek - (52 * 7));
 
-        const dayOfWeek = startDate.getDay();
-        startDate.setDate(startDate.getDate() - dayOfWeek);
-
-        for (let wi = 0; wi < 52; wi++) {
+        for (let wi = 0; wi < 53; wi++) {
             for (let di = 0; di < 7; di++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + (wi * 7) + di);
-                const dateString = currentDate.toISOString().split('T')[0];
+                
+                const y = currentDate.getFullYear();
+                const m = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const d = String(currentDate.getDate()).padStart(2, '0');
+                const dateString = `${y}-${m}-${d}`;
+
                 grid[wi][di] = {
                     count: combinedActivity[dateString] || 0,
                     date: currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
