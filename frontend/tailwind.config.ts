@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ["Outfit", "sans-serif"],
+        display: ["Lora", "serif"],
         body: ["Inter", "sans-serif"],
       },
       colors: {
