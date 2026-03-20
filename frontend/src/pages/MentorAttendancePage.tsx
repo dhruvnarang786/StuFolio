@@ -222,16 +222,16 @@ const MentorAttendancePage = () => {
                                                     <select
                                                         value={status}
                                                         onChange={(e) => handleStatusChange(student.id, subject.id, e.target.value)}
-                                                        className={`w-full max-w-[120px] h-9 rounded-lg border text-[11px] font-bold px-2 focus:outline-none transition-all cursor-pointer ${status === "PRESENT"
-                                                            ? "bg-accent/10 border-accent text-accent"
+                                                        className={`w-full max-w-[120px] h-9 rounded-lg border text-[11px] font-bold px-2 focus:outline-none transition-all cursor-pointer shadow-sm ${status === "PRESENT"
+                                                            ? "bg-[#10b981] border-[#10b981] text-white" 
                                                             : status === "ABSENT"
-                                                                ? "bg-destructive/10 border-destructive text-destructive"
-                                                                : "bg-secondary/50 border-border text-muted-foreground opacity-60"
+                                                                ? "bg-[#ef4444] border-[#ef4444] text-white"
+                                                                : "bg-secondary border-border text-foreground hover:bg-secondary/80"
                                                             }`}
                                                     >
-                                                        <option value="PRESENT">Present</option>
-                                                        <option value="ABSENT">Absent</option>
-                                                        <option value="NO_CLASS">No Class</option>
+                                                        <option value="PRESENT" className="bg-white dark:bg-slate-900 text-black dark:text-white">Present</option>
+                                                        <option value="ABSENT" className="bg-white dark:bg-slate-900 text-black dark:text-white">Absent</option>
+                                                        <option value="NO_CLASS" className="bg-white dark:bg-slate-900 text-black dark:text-white">No Class</option>
                                                     </select>
                                                 </td>
                                             );
@@ -247,10 +247,10 @@ const MentorAttendancePage = () => {
                 <div className="flex flex-wrap items-center justify-between gap-6 px-2">
                     <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-accent"></div> Present
+                            <div className="h-3 w-3 rounded-full bg-[#10b981]"></div> Present
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-destructive"></div> Absent
+                            <div className="h-3 w-3 rounded-full bg-[#ef4444]"></div> Absent
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full bg-secondary border border-border"></div> No Class
