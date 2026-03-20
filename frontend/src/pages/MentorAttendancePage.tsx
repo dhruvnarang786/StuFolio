@@ -225,7 +225,7 @@ const MentorAttendancePage = () => {
                                                         className={`w-full max-w-[120px] h-9 rounded-lg border text-[11px] font-bold px-2 focus:outline-none transition-all cursor-pointer shadow-sm ${status === "PRESENT"
                                                             ? "bg-[#10b981] border-[#10b981] text-white" 
                                                             : status === "ABSENT"
-                                                                ? "bg-[#ef4444] border-[#ef4444] text-white"
+                                                                ? "bg-[#dc2626] border-[#dc2626] text-white"
                                                                 : "bg-secondary border-border text-foreground hover:bg-secondary/80"
                                                             }`}
                                                     >
@@ -250,7 +250,7 @@ const MentorAttendancePage = () => {
                             <div className="h-3 w-3 rounded-full bg-[#10b981]"></div> Present
                         </div>
                         <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-[#ef4444]"></div> Absent
+                            <div className="h-3 w-3 rounded-full bg-[#dc2626]"></div> Absent
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="h-3 w-3 rounded-full bg-secondary border border-border"></div> No Class
