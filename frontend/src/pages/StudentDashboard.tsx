@@ -34,6 +34,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import PlatformIcon from "@/components/PlatformIcon";
 import { cn } from "@/lib/utils";
+import ContestModal from "@/components/ContestModal";
 
 const iconMap: Record<string, any> = {
   TrendingUp, Code, GraduationCap, Flame, Target, Award, BookOpen, CheckCircle, Trophy,
@@ -105,6 +106,8 @@ const StudentDashboard = () => {
   const [data, setData] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedContest, setSelectedContest] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -544,48 +547,60 @@ const StudentDashboard = () => {
                   : "bg-secondary/30 border-border text-muted-foreground";
 
                 const Content = (
-                  <div className={cn(
-                    "group relative overflow-hidden rounded-xl border p-4 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
-                    cardStyle,
-                    isFirst && isContest ? "ring-1 ring-offset-2 ring-primary/20 shadow-md" : ""
-                  )}>
+                  <div 
+                    onClick={() => {
+                      setSelectedContest(event);
+                      setIsModalOpen(true);
+                    }}
+                    className={cn(
+                      "group relative overflow-hidden rounded-xl border p-4 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer",
+                      cardStyle,
+                      isFirst && isContest ? "ring-1 ring-offset-2 ring-primary/20 shadow-md" : ""
+                    )}
+                  >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className="mt-1">
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="mt-1 flex-shrink-0">
                           {isContest ? (
-                            <PlatformIcon platform={event.platform} className="h-5 w-5" />
+                            <PlatformIcon platform={event.platform} className="h-6 w-6" />
                           ) : (
-                            <Calendar className="h-5 w-5 opacity-60" />
+                            <Calendar className="h-6 w-6 opacity-60" />
                           )}
                         </div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold truncate tracking-tight">{event.title}</p>
-                          <p className="text-[10px] font-medium opacity-70 mt-0.5">
-                            {dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                            {event.duration && ` · ${event.duration}`}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                             <div className={cn(
+                               "h-2 w-2 rounded-full",
+                               event.platform?.toLowerCase().includes("leetcode") ? "bg-amber-500" :
+                               event.platform?.toLowerCase().includes("codeforces") ? "bg-blue-500" :
+                               "bg-primary"
+                             )} />
+                             <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">
+                               {event.platform || event.type}
+                             </p>
+                          </div>
                         </div>
                       </div>
                       
-                      {isContest && (
-                        <div className="flex flex-col items-end shrink-0">
+                      <div className="flex flex-col items-end shrink-0 pt-1">
+                         <div className="text-[10px] font-bold opacity-60 mb-1.5">
+                            {dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                         </div>
+                         {isContest && (
                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background/50 backdrop-blur-sm border border-border/20 shadow-sm">
                              <Timer className="h-3 w-3 text-primary animate-pulse" />
                              <span className="text-[10px] font-bold">
                                <CountdownTimer targetDate={event.date} />
                              </span>
                            </div>
-                        </div>
-                      )}
+                         )}
+                      </div>
                     </div>
                   </div>
                 );
 
-                return event.link ? (
-                  <a href={event.link} target="_blank" rel="noopener noreferrer" key={event.id || i} className="block">
-                    {Content}
-                  </a>
-                ) : (
+                return (
                   <div key={event.id || i}>{Content}</div>
                 );
               })
@@ -626,6 +641,12 @@ const StudentDashboard = () => {
           </div>
         </motion.div>
       )}
+      
+      <ContestModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        contest={selectedContest}
+      />
     </DashboardLayout>
   );
 };

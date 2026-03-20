@@ -15,6 +15,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import api from "@/lib/api";
 import PlatformIcon from "@/components/PlatformIcon";
 import { cn } from "@/lib/utils";
+import ContestModal from "@/components/ContestModal";
 
 interface CalendarEvent {
     id: string;
@@ -49,6 +50,8 @@ const CalendarPage = () => {
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["LeetCode", "Codeforces", "CodeChef", "AtCoder", "HackerRank", "Google"]);
     const [apiEvents, setApiEvents] = useState<CalendarEvent[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedContest, setSelectedContest] = useState<CalendarEvent | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const platforms = ["LeetCode", "Codeforces", "CodeChef", "AtCoder", "HackerRank", "Google"];
 
@@ -175,32 +178,47 @@ const CalendarPage = () => {
                             const isSelected = dateKey === selectedDate;
 
                             return (
-                                <button
+                                <div
                                     key={day}
-                                    onClick={() => setSelectedDate(dateKey)}
-                                    className={`relative h-12 sm:h-14 rounded-lg text-sm font-medium transition-all ${isSelected
-                                            ? "bg-primary text-white shadow-glow"
-                                            : isToday
-                                                ? "bg-primary/10 text-primary border border-primary/30"
-                                                : "text-foreground hover:bg-secondary/50"
-                                        }`}
-                                >
-                                    {day}
-                                    {hasEvents && !isSelected && (
-                                        <div className="absolute bottom-1 left-0 right-0 px-1 overflow-hidden h-4 flex flex-wrap justify-center gap-0.5">
-                                            {dayEvents.map((e, j) => (
-                                                <div 
-                                                    key={j} 
-                                                    className={cn(
-                                                        "h-1.5 w-1.5 rounded-full",
-                                                        e.type === "contest" ? "bg-amber-500" :
-                                                        e.type === "deadline" ? "bg-red-500" : "bg-primary"
-                                                    )} 
-                                                />
-                                            ))}
-                                        </div>
+                                    className={cn(
+                                        "relative min-h-[80px] sm:min-h-[100px] p-1 rounded-xl border border-border/40 transition-all",
+                                        isSelected ? "bg-primary/5 border-primary/40 ring-1 ring-primary/20" : 
+                                        isToday ? "bg-emerald-500/5 border-emerald-500/30" : "bg-card hover:bg-secondary/30"
                                     )}
-                                </button>
+                                    onClick={() => setSelectedDate(dateKey)}
+                                >
+                                    <div className="flex justify-between items-start mb-1 px-1">
+                                        <span className={cn(
+                                            "text-xs font-bold leading-none h-6 w-6 flex items-center justify-center rounded-full mt-0.5",
+                                            isToday ? "bg-emerald-500 text-white" : isSelected ? "bg-primary text-white" : "text-muted-foreground"
+                                        )}>
+                                            {day}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="space-y-1">
+                                        {dayEvents.map((e, j) => {
+                                            const colors = e.type === "contest" ? getPlatformColors(e.platform) : typeConfig[e.type]?.bg;
+                                            return (
+                                                <button
+                                                    key={j}
+                                                    onClick={(ev) => {
+                                                        ev.stopPropagation();
+                                                        setSelectedContest(e);
+                                                        setIsModalOpen(true);
+                                                    }}
+                                                    className={cn(
+                                                        "w-full text-[9px] sm:text-[10px] p-1 rounded-md border flex items-center gap-1.5 transition-all hover:scale-[1.02] shadow-sm truncate",
+                                                        colors
+                                                    )}
+                                                >
+                                                    <PlatformIcon platform={e.platform} className="h-3 w-3 shrink-0" />
+                                                    <span className="truncate font-bold tracking-tight">{e.title}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>
@@ -244,10 +262,17 @@ const CalendarPage = () => {
                                     const platformColors = event.type === "contest" ? getPlatformColors(event.platform) : config.bg + " " + config.color;
                                     
                                     const Content = (
-                                        <div key={i} className={cn(
-                                            "rounded-xl border-2 p-4 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer shadow-sm",
-                                            platformColors
-                                        )}>
+                                        <div 
+                                            key={i} 
+                                            onClick={() => {
+                                                setSelectedContest(event);
+                                                setIsModalOpen(true);
+                                            }}
+                                            className={cn(
+                                                "rounded-xl border-2 p-4 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer shadow-sm",
+                                                platformColors
+                                            )}
+                                        >
                                             <div className="flex items-start gap-4">
                                                 <div className="mt-0.5">
                                                     {event.type === "contest" ? (
@@ -338,6 +363,12 @@ const CalendarPage = () => {
                     </div>
                 </motion.div>
             </div>
+
+            <ContestModal 
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                contest={selectedContest}
+            />
         </DashboardLayout>
     );
 };
