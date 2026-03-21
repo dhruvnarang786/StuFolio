@@ -5,6 +5,7 @@ interface LogoProps {
   className?: string;
   showText?: boolean;
   size?: "sm" | "md" | "lg";
+  subtitle?: string;
 }
 
 const LogoIcon: React.FC<{ className?: string }> = ({ className = "" }) => (
@@ -24,7 +25,7 @@ const LogoIcon: React.FC<{ className?: string }> = ({ className = "" }) => (
   </svg>
 );
 
-const Logo: React.FC<LogoProps> = ({ className = "", showText = true, size = "md" }) => {
+const Logo: React.FC<LogoProps> = ({ className = "", showText = true, size = "md", subtitle }) => {
   const sizeClasses = {
     sm: "h-7 w-7",
     md: "h-9 w-9",
@@ -43,9 +44,16 @@ const Logo: React.FC<LogoProps> = ({ className = "", showText = true, size = "md
         <LogoIcon className="h-full w-full" />
       </div>
       {showText && (
-        <span className={`font-display ${textClasses[size]} font-bold text-foreground tracking-tight`}>
-          StuFolio
-        </span>
+        <div className="flex flex-col leading-tight">
+          <span className={`font-display ${textClasses[size]} font-bold text-foreground tracking-tight`}>
+            StuFolio
+          </span>
+          {subtitle && (
+            <span className="text-[10px] text-muted-foreground font-medium">
+              {subtitle}
+            </span>
+          )}
+        </div>
       )}
     </Link>
   );

@@ -95,12 +95,12 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
         {/* Logo */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-border/50">
           {!collapsed ? (
-            <div className="flex flex-col">
-              <Logo size="md" showText={true} className="flex-1" />
-              <p className="text-[10px] text-muted-foreground leading-none ml-[46px] -mt-2">
-                {role === "mentor" ? "Mentor Panel" : "Student Portal"}
-              </p>
-            </div>
+            <Logo
+              size="md"
+              showText={true}
+              subtitle={role === "mentor" ? "Mentor Panel" : "Student Portal"}
+              className="flex-1"
+            />
           ) : (
             <Logo size="md" showText={false} className="mx-auto" />
           )}
