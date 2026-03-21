@@ -19,7 +19,7 @@ interface Message {
 const AIChatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { id: 0, text: "Hi! I'm StuBot 🤖 — your AI assistant for StuFolio. How can I help you today?", sender: "bot" },
+        { id: 0, text: "Hi! I'm StuBot your AI assistant for StuFolio. How can I help you today?", sender: "bot" },
     ]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
@@ -126,8 +126,8 @@ const AIChatbot = () => {
                                 >
                                     <div
                                         className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${msg.sender === "user"
-                                                ? "bg-gradient-primary text-white rounded-br-md"
-                                                : "bg-secondary text-foreground rounded-bl-md"
+                                            ? "bg-gradient-primary text-white rounded-br-md"
+                                            : "bg-secondary text-foreground rounded-bl-md"
                                             }`}
                                     >
                                         {msg.text}
