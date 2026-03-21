@@ -23,6 +23,7 @@ router.post("/", authenticateToken, requireRole("STUDENT", "student"), async (re
                         academicRecords: { include: { subject: true } },
                         attendances: { include: { subject: true } },
                         semesterCGPAs: true,
+                        codingProfiles: true,
                     }
                 }
             }
@@ -36,6 +37,11 @@ router.post("/", authenticateToken, requireRole("STUDENT", "student"), async (re
         const contextData = {
             name: user.name,
             cgpa: student.cgpa,
+            rank: student.rank,
+            compositeScore: student.compositeScore,
+            codingScore: student.codingScore,
+            streak: student.streak,
+            codingProfilesConnected: student.codingProfiles?.map(cp => cp.platform).join(', ') || "None",
             attendance: student.attendances.map(a => ({
                 subject: a.subject.name,
                 percentage: Math.round((a.attended / a.total) * 100)
@@ -49,9 +55,9 @@ router.post("/", authenticateToken, requireRole("STUDENT", "student"), async (re
         const systemPrompt = `You are StuBot, a friendly and helpful AI assistant for the StuFolio student portal. 
 You are talking to ${user.name}. Keep your answers short, conversational, and use plenty of emojis. 
 IMPORTANT: Do not use Markdown asterisks (**) or formatting. Return only plain, friendly text with emojis.
-Here is the student's current academic data:
+Here is the student's current StuFolio data:
 ${JSON.stringify(contextData, null, 2)}
-If they ask about their grades, attendance, or CGPA, reference the exact data above to give them an accurate answer.
+If they ask about their grades, attendance, CGPA, rank, coding stats, or streaks, reference the exact data above to give them an accurate answer.
 Student message: ${message}`;
 
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
