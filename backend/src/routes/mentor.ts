@@ -296,10 +296,11 @@ router.get("/attendance/day", authenticateToken, requireRole("MENTOR"), async (r
 
         if (!mentor) return res.status(404).json({ error: "Mentor not found" });
 
-        // Get all students in mentor's section
+        // Get all students in mentor's section, ordered by enrollment
         const students = await prisma.student.findMany({
             where: { section: mentor.section },
-            select: { id: true, user: { select: { name: true } }, enrollment: true }
+            select: { id: true, user: { select: { name: true } }, enrollment: true },
+            orderBy: { enrollment: "asc" }
         });
 
         // Get all subjects (4th semester as requested)
