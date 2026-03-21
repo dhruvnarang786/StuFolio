@@ -195,7 +195,8 @@ const MentorAttendancePage = () => {
                         <table className="w-full border-collapse">
                             <thead>
                                 <tr className="bg-secondary/30 backdrop-blur-sm">
-                                    <th className="sticky left-0 z-10 bg-secondary/30 px-6 py-5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-left min-w-[200px] border-b border-border">Student Name</th>
+                                    <th className="sticky left-0 z-20 bg-secondary/30 px-4 py-5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center w-[80px] border-b border-r border-border/50">Roll No</th>
+                                    <th className="sticky left-[80px] z-20 bg-secondary/30 px-6 py-5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-left min-w-[200px] border-b border-border">Student Name</th>
                                     {subjects.map(subject => (
                                         <th key={subject.id} className="px-4 py-5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider text-center min-w-[150px] border-b border-border">
                                             <div className="flex flex-col gap-1">
@@ -209,7 +210,10 @@ const MentorAttendancePage = () => {
                             <tbody className="divide-y divide-border/50">
                                 {filteredStudents.map((student) => (
                                     <tr key={student.id} className="hover:bg-secondary/5 transition-colors group">
-                                        <td className="sticky left-0 z-10 bg-card group-hover:bg-secondary/5 px-6 py-4 border-r border-border/30">
+                                        <td className="sticky left-0 z-10 bg-card group-hover:bg-secondary/5 px-4 py-4 border-r border-border/30 text-center font-mono text-sm font-bold text-foreground">
+                                            {student.enrollment.substring(0, 3)}
+                                        </td>
+                                        <td className="sticky left-[80px] z-10 bg-card group-hover:bg-secondary/5 px-6 py-4 border-r border-border/30">
                                             <div>
                                                 <div className="font-semibold text-foreground text-sm">{student.name}</div>
                                                 <div className="text-[10px] text-muted-foreground font-mono">{student.enrollment}</div>
