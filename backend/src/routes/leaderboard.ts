@@ -11,14 +11,24 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
 
         let whereClause: any = {};
 
-        if (filter === "my_students" && req.user?.role === "MENTOR") {
-            const mentor = await prisma.mentor.findUnique({
-                where: { userId: req.user.userId },
-                select: { section: true }
-            });
+        if (filter === "my_students") {
+            let section = null;
+            if (req.user?.role === "MENTOR") {
+                const mentor = await prisma.mentor.findUnique({
+                    where: { userId: req.user.userId },
+                    select: { section: true }
+                });
+                section = mentor?.section;
+            } else if (req.user?.role === "STUDENT") {
+                const student = await prisma.student.findUnique({
+                    where: { userId: req.user.userId },
+                    select: { section: true }
+                });
+                section = student?.section;
+            }
 
-            if (mentor?.section) {
-                whereClause.section = mentor.section;
+            if (section) {
+                whereClause.section = section;
             }
         }
 

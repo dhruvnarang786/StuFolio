@@ -87,24 +87,22 @@ const LeaderboardPage = () => {
           ))}
         </div>
 
-        {role === "mentor" && (
-          <div className="flex bg-secondary/50 p-1 rounded-xl self-start sm:self-auto border border-border">
-            <button
-              onClick={() => setViewFilter("all")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              All Students
-            </button>
-            <button
-              onClick={() => setViewFilter("my_students")}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "my_students" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-            >
-              My Section
-            </button>
-          </div>
-        )}
+        <div className="flex bg-secondary/50 p-1 rounded-xl self-start sm:self-auto border border-border">
+          <button
+            onClick={() => setViewFilter("all")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "all" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            All Students
+          </button>
+          <button
+            onClick={() => setViewFilter("my_students")}
+            className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${viewFilter === "my_students" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+          >
+            My Section
+          </button>
+        </div>
       </div>
 
       {loading ? (
