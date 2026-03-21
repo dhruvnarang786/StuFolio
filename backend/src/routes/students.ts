@@ -3,6 +3,7 @@ import prisma from "../lib/prisma";
 import { AuthRequest, authenticateToken, requireRole } from "../middleware/auth";
 import { fetchPlatformStats } from "../services/platformFetcher";
 import { refreshStudentProfiles } from "../services/profileService";
+import { updateStudentStreak } from "../services/streakService";
 
 const router = Router();
 
@@ -30,6 +31,11 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
         // Trigger background refresh (don't await)
         refreshStudentProfiles(user.student.id).catch(err => 
             console.error("[API] Background refresh triggered from /me failed:", err)
+        );
+
+        // Also refresh streak
+        updateStudentStreak(user.student.id).catch(err =>
+            console.error("[API] Streak refresh triggered from /me failed:", err)
         );
 
         const s = user.student;
@@ -113,6 +119,11 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
         // Trigger background refresh (don't await)
         refreshStudentProfiles(user.student.id).catch(err => 
             console.error("[API] Background refresh triggered from /me/profile failed:", err)
+        );
+
+        // Also refresh streak
+        updateStudentStreak(user.student.id).catch(err =>
+            console.error("[API] Streak refresh triggered from /me/profile failed:", err)
         );
 
         const s = user.student;
@@ -378,6 +389,9 @@ router.post("/me/coding-profiles", authenticateToken, requireRole("STUDENT"), as
                 },
             });
         }
+
+        // Update streak after linking new profile
+        await updateStudentStreak(user.student.id);
 
         return res.json({
             id: profile.id,

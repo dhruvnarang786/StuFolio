@@ -1,6 +1,7 @@
 
 import prisma from "../lib/prisma";
 import { fetchPlatformStats } from "./platformFetcher";
+import { updateStudentStreak } from "./streakService";
 
 export async function refreshStudentProfiles(studentId: string) {
     try {
@@ -13,6 +14,7 @@ export async function refreshStudentProfiles(studentId: string) {
 
         console.log(`[ProfileService] Auto-refreshing ${student.codingProfiles.length} profiles for student ${studentId}`);
 
+        let anyUpdated = false;
         for (const cp of student.codingProfiles) {
             // Rate limit check: only refresh once per hour per platform
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
@@ -33,11 +35,16 @@ export async function refreshStudentProfiles(studentId: string) {
                         },
                     });
                     console.log(`[ProfileService] Updated ${cp.platform} for ${studentId}`);
+                    anyUpdated = true;
                 }
             } catch (err) {
                 console.error(`[ProfileService] Error refreshing ${cp.platform} for ${studentId}:`, err);
             }
         }
+
+        // Always update streak after refreshing, or whenever if we want to be sure
+        await updateStudentStreak(studentId);
+        
     } catch (error) {
         console.error(`[ProfileService] Fatal error in refreshStudentProfiles:`, error);
     }

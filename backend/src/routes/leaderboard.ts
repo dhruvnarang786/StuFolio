@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import prisma from "../lib/prisma";
 import { AuthRequest, authenticateToken } from "../middleware/auth";
+import { refreshStudentProfiles } from "../services/profileService";
 
 const router = Router();
 
@@ -42,6 +43,14 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
             orderBy: { cgpa: "desc" },
         });
 
+        // Background refresh all students in the leaderboard result
+        // (internal 1-hour rate limit in profileService handles the throttling)
+        students.forEach(s => {
+            refreshStudentProfiles(s.id).catch(err => 
+                console.error(`[Leaderboard] Background refresh failed for ${s.id}:`, err)
+            );
+        });
+
         const leaderboard = students.map((s, index) => {
             // Calculate coding score from profiles
             const totalProblems = s.codingProfiles.reduce((sum, cp) => {
@@ -55,9 +64,9 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
             const totalClasses = s.attendances.reduce((sum, a) => sum + a.total, 0);
             const attPct = totalClasses > 0 ? (totalAtt / totalClasses) * 100 : 0;
 
-            // Composite score (weighted)
+            // Composite score (weighted: 50% Coding, 30% CGPA, 20% Attendance)
             const compositeScore = Number(
-                (s.cgpa * 10 * 0.4 + Math.min(totalProblems / 5, 100) * 0.35 + attPct * 0.25).toFixed(1)
+                (s.cgpa * 10 * 0.3 + Math.min(totalProblems / 5, 100) * 0.5 + attPct * 0.2).toFixed(1)
             );
 
             return {
