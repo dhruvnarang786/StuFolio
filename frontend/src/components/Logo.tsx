@@ -22,8 +22,8 @@ const Logo: React.FC<LogoProps> = ({ className = "", showText = true, size = "md
 
   return (
     <Link to="/" className={`flex items-center gap-2.5 ${className}`}>
-      <div className={`${sizeClasses[size]} rounded-xl bg-primary flex items-center justify-center shadow-glow shrink-0 overflow-hidden`}>
-        <img src="/logo.png" alt="StuFolio Logo" className="h-full w-full object-cover" />
+      <div className={`${sizeClasses[size]} border-2 border-primary rounded-xl flex items-center justify-center shrink-0 p-1.5`}>
+        <img src="/logo_transparent.png" alt="StuFolio Logo" className="h-full w-full object-contain" />
       </div>
       {showText && (
         <span className={`font-display ${textClasses[size]} font-bold text-foreground tracking-tight`}>
