@@ -202,6 +202,13 @@ class ApiClient {
         return this.request<unknown>("/analysis/me");
     }
 
+    chatWithBot(message: string) {
+        return this.request<{ response: string }>("/chat", {
+            method: "POST",
+            body: JSON.stringify({ message }),
+        });
+    }
+
     updateStudentProfile(data: unknown) {
         return this.request<unknown>("/students/me", {
             method: "PATCH",

@@ -26,6 +26,7 @@ import NotificationCenter from "./NotificationCenter";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import Logo from "./Logo";
+import AIChatbot from "./AIChatbot";
 
 const studentNavItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -204,6 +205,9 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
 
         <div className="p-4 lg:p-8">{children}</div>
       </main>
+
+      {/* Persistent AI Chatbot */}
+      {role === "student" && <AIChatbot />}
     </div>
   );
 };

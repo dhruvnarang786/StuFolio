@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
+import api from "@/lib/api";
 
 const quickActions = [
     "How do I check my attendance?",
@@ -15,45 +16,36 @@ interface Message {
     sender: "user" | "bot";
 }
 
-const botResponses: Record<string, string> = {
-    "attendance": "You can check your attendance by navigating to the **Attendance** section from the sidebar. It shows subject-wise attendance tracking and eligibility predictions based on the 75% criteria.",
-    "ai": "Head over to **AI Analysis** in the sidebar! There you'll find performance predictions, strength/weakness analysis, personalized improvement suggestions, and a goal simulator.",
-    "leetcode": "Go to **Settings** → **Integrations** tab. You can link your LeetCode, Codeforces, and GitHub profiles there. Once linked, your coding stats will appear on your dashboard and profile.",
-    "leaderboard": "Click on **Leaderboard** in the sidebar. You can switch between Overall, Coding, Academic, and Improvement rankings using the tabs at the top.",
-    "default": "I can help you navigate through StuFolio! Try asking about attendance tracking, AI analysis, coding profiles, leaderboards, calendar events, or career planning. 🚀",
-};
-
-const getResponse = (input: string): string => {
-    const lower = input.toLowerCase();
-    if (lower.includes("attendance")) return botResponses["attendance"];
-    if (lower.includes("ai") || lower.includes("analysis")) return botResponses["ai"];
-    if (lower.includes("leetcode") || lower.includes("link") || lower.includes("profile")) return botResponses["leetcode"];
-    if (lower.includes("leaderboard") || lower.includes("rank")) return botResponses["leaderboard"];
-    return botResponses["default"];
-};
-
 const AIChatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { id: 0, text: "Hi! I'm StuBot 🤖 — your AI assistant for StuFolio. How can I help you today?", sender: "bot" },
     ]);
     const [input, setInput] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, isTyping]);
 
-    const sendMessage = (text: string) => {
+    const sendMessage = async (text: string) => {
         if (!text.trim()) return;
         const userMsg: Message = { id: Date.now(), text, sender: "user" };
         setMessages((prev) => [...prev, userMsg]);
         setInput("");
+        setIsTyping(true);
 
-        setTimeout(() => {
-            const botMsg: Message = { id: Date.now() + 1, text: getResponse(text), sender: "bot" };
+        try {
+            const result = await api.chatWithBot(text);
+            const botMsg: Message = { id: Date.now() + 1, text: result.response, sender: "bot" };
             setMessages((prev) => [...prev, botMsg]);
-        }, 600);
+        } catch (error) {
+            const errorMsg: Message = { id: Date.now() + 1, text: "I'm having trouble connecting to my servers right now 😢", sender: "bot" };
+            setMessages((prev) => [...prev, errorMsg]);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     return (
@@ -68,9 +60,22 @@ const AIChatbot = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setIsOpen(true)}
-                        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-gradient-primary shadow-glow-lg flex items-center justify-center text-white hover:shadow-glow transition-all"
+                        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-2xl bg-background border-2 border-primary shadow-glow flex items-center justify-center text-primary hover:shadow-glow-lg transition-all"
                     >
-                        <MessageCircle className="h-6 w-6" />
+                        <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-7 w-7"
+                        >
+                            <path d="M2 5V19C2 19 6 17 12 19V5C12 5 6 3 2 5Z" />
+                            <path d="M22 5V19C22 19 18 17 12 19V5C12 5 18 3 22 5Z" />
+                            <path d="M8 10.5L6.5 12L8 13.5" />
+                            <path d="M16 10.5L17.5 12L16 13.5" />
+                        </svg>
                     </motion.button>
                 )}
             </AnimatePresence>
@@ -126,6 +131,15 @@ const AIChatbot = () => {
                                     </div>
                                 </motion.div>
                             ))}
+                            {isTyping && (
+                                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                                    <div className="max-w-[85%] rounded-2xl px-4 py-3.5 text-sm bg-secondary text-foreground rounded-bl-md flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce"></span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                                    </div>
+                                </motion.div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 

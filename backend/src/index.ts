@@ -9,6 +9,7 @@ import leaderboardRoutes from "./routes/leaderboard";
 import eventRoutes from "./routes/events";
 import notificationRoutes from "./routes/notifications";
 import analysisRoutes from "./routes/analysis";
+import chatRoutes from "./routes/chat";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,6 +40,7 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/analysis", analysisRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Start server
 app.listen(PORT, () => {

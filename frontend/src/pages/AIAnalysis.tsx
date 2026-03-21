@@ -245,16 +245,16 @@ const AIAnalysis = () => {
                     </div>
                     <p className="text-xs text-muted-foreground mb-4">What you need to reach target CGPAs</p>
                     <div className="space-y-4">
-                        {[
-                            { target: "8.5 CGPA", needed: "Maintain current trajectory", feasibility: "Very Likely", color: "text-accent" },
-                            { target: "9.0 CGPA", flag: data.predictedGPA < 8.5, needed: "Increase study hours by 20% and improve attendance", feasibility: "Challenging", color: "text-warning" },
-                        ].map((g, i) => (
-                            <div key={i} className="rounded-xl border border-border p-4 bg-secondary/20">
+                        {(data.goalRoadmap || [
+                            { target: "8.5 CGPA", needed: "Maintain current trajectory", feasibility: "Very Likely", color: "text-accent bg-accent/10" },
+                            { target: "9.0 CGPA", flag: data.predictedGPA < 8.5, needed: "Increase study hours by 20% and improve attendance", feasibility: "Challenging", color: "text-warning bg-warning/10" },
+                        ]).map((g: any, i: number) => (
+                            <div key={i} className={`rounded-xl border p-4 ${g.color || 'bg-secondary/20 border-border'}`}>
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-display font-bold text-foreground">{g.target}</span>
-                                    <span className={`text-xs font-medium ${g.color}`}>{g.feasibility}</span>
+                                    <span className={`text-sm font-display font-bold ${g.color ? g.color.split(' ')[0] : 'text-foreground'}`}>{g.target}</span>
+                                    <span className={`text-xs font-medium ${g.color ? g.color.split(' ')[0] : ''}`}>{g.feasibility}</span>
                                 </div>
-                                <p className="text-xs text-muted-foreground">{g.needed}</p>
+                                <p className={`text-xs ${g.color ? g.color.split(' ')[0] : 'text-muted-foreground'}`}>{g.needed}</p>
                             </div>
                         ))}
                     </div>
