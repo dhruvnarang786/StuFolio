@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   LayoutDashboard,
   Trophy,
@@ -70,6 +71,20 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
   };
 
   const navItems = role === "mentor" ? mentorNavItems : studentNavItems;
+
+  useEffect(() => {
+    const hasSeenAlert = localStorage.getItem("hasSeenDummyDataAlert");
+    if (!hasSeenAlert) {
+      const timer = setTimeout(() => {
+        toast("Welcome to StuFolio!", {
+          description: "Just a gentle heads-up: all the data you currently see is dummy data for demonstration purposes.",
+          duration: 6000,
+        });
+        localStorage.setItem("hasSeenDummyDataAlert", "true");
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex">
