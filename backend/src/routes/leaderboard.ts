@@ -36,7 +36,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
         const students = await prisma.student.findMany({
             where: whereClause,
             include: {
-                user: { select: { name: true } },
+                user: { select: { name: true, avatarUrl: true } },
                 codingProfiles: true,
                 attendances: true,
             },
@@ -77,6 +77,7 @@ router.get("/", authenticateToken, async (req: AuthRequest, res: Response) => {
             return {
                 rank: 0, // Assigned after sorting
                 name: s.user.name,
+                avatarUrl: (s.user as any).avatarUrl,
                 section: s.section,
                 compositeScore: Number(displayScore.toFixed(1)),
                 cgpa: s.cgpa,

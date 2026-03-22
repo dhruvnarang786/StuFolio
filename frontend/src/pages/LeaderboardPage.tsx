@@ -26,7 +26,7 @@ interface LeaderboardStudent {
   name: string;
   rank: number;
   points: number;
-  avatar?: string;
+  avatarUrl?: string;
   trend?: "up" | "down" | "none";
   solved: number;
   semester?: string;
@@ -129,11 +129,15 @@ const LeaderboardPage = () => {
                     "border-border shadow-sm"
                     }`}
                 >
-                  <div className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center text-sm sm:text-base font-bold shrink-0 md:mx-auto md:mb-3 ${pos === 1 ? "bg-warning/20 text-warning ring-2 ring-warning/30" :
+                  <div className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full flex items-center justify-center text-sm sm:text-base font-bold shrink-0 md:mx-auto md:mb-3 overflow-hidden ${pos === 1 ? "bg-warning/20 text-warning ring-2 ring-warning/30" :
                     pos === 2 ? "bg-gray-300/20 text-gray-300" :
                       "bg-amber-600/20 text-amber-500"
                     }`}>
-                    {student.name.split(" ").map((n: string) => n[0]).join("")}
+                    {student.avatarUrl ? (
+                      <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
+                    ) : (
+                      student.name.split(" ").map((n: string) => n[0]).join("")
+                    )}
                   </div>
                   <div className="flex-1 text-left md:text-center">
                     <div className="flex items-center md:justify-center gap-1.5 mb-1">
@@ -218,9 +222,13 @@ const LeaderboardPage = () => {
                         </td>
                         <td className="px-3 sm:px-4 py-3.5">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shrink-0 ${isCurrentUser ? "bg-gradient-primary shadow-glow" : "bg-gradient-primary"
+                            <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-bold text-white shrink-0 overflow-hidden ${isCurrentUser ? "bg-gradient-primary shadow-glow" : "bg-gradient-primary"
                               }`}>
-                              {student.name.split(" ").map((n: string) => n[0]).join("")}
+                              {student.avatarUrl ? (
+                                <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
+                              ) : (
+                                student.name.split(" ").map((n: string) => n[0]).join("")
+                              )}
                             </div>
                             <div className="min-w-0">
                               <span className="font-medium text-xs sm:text-sm text-foreground truncate block">{student.name}</span>
