@@ -17,6 +17,7 @@ interface AuthContextType {
     login: (email: string, password: string, role?: string) => Promise<void>;
     msalLogin: (idToken: string) => Promise<void>;
     register: (userData: Record<string, unknown>) => Promise<void>;
+    updateUser: (user: User) => void;
     logout: () => void;
 }
 
@@ -96,6 +97,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+        localStorage.setItem("stufolio_user", JSON.stringify(updatedUser));
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -105,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 login,
                 msalLogin,
                 register,
+                updateUser,
                 logout,
             }}
         >

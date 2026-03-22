@@ -19,7 +19,7 @@ router.get("/dashboard", authenticateToken, requireRole("MENTOR"), async (req: A
         const students = await prisma.student.findMany({
             where: { section: mentor.section },
             include: {
-                user: { select: { name: true } },
+                user: { select: { name: true, avatarUrl: true } },
                 attendances: { include: { subject: true } },
                 codingProfiles: true,
             },
@@ -136,7 +136,7 @@ router.get("/students", authenticateToken, requireRole("MENTOR"), async (req: Au
         const students = await prisma.student.findMany({
             where,
             include: {
-                user: { select: { name: true, email: true } },
+                user: { select: { name: true, email: true, avatarUrl: true } },
                 attendances: true,
                 codingProfiles: true,
             },
@@ -271,7 +271,7 @@ router.post("/attendance/daily", authenticateToken, requireRole("MENTOR"), async
                     }));
                 }
             }
-            
+
             if (operations.length > 0) {
                 await Promise.all(operations);
             }
@@ -299,7 +299,7 @@ router.get("/attendance/day", authenticateToken, requireRole("MENTOR"), async (r
         // Get all students in mentor's section, ordered by enrollment
         const students = await prisma.student.findMany({
             where: { section: mentor.section },
-            select: { id: true, user: { select: { name: true } }, enrollment: true },
+            select: { id: true, user: { select: { name: true, avatarUrl: true } }, enrollment: true },
             orderBy: { enrollment: "asc" }
         });
 
@@ -386,7 +386,7 @@ router.post("/attendance/day", authenticateToken, requireRole("MENTOR"), async (
         // Transaction with extended timeout
         await (prisma as any).$transaction(async (tx: any) => {
             const operations: Promise<any>[] = [];
-            
+
             for (const record of records) {
                 const { studentId, subjectId, status } = record;
 
@@ -574,14 +574,14 @@ router.post("/students/:id/alert", authenticateToken, requireRole("MENTOR"), asy
 
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
-            include: { user: { select: { name: true, email: true } } },
+            include: { user: { select: { name: true, email: true, avatarUrl: true } } },
         });
 
         if (!mentor) return res.status(404).json({ error: "Mentor not found" });
 
         const student = await prisma.student.findUnique({
             where: { id: studentId },
-            include: { user: { select: { name: true, email: true, id: true } } },
+            include: { user: { select: { name: true, email: true, id: true, avatarUrl: true } } },
         });
 
         if (!student) return res.status(404).json({ error: "Student not found" });
@@ -642,7 +642,7 @@ router.get("/profile", authenticateToken, requireRole("MENTOR"), async (req: Aut
     try {
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
-            include: { user: { select: { name: true, email: true } } },
+            include: { user: { select: { name: true, email: true, avatarUrl: true } } },
         });
 
         if (!mentor) return res.status(404).json({ error: "Mentor not found" });
@@ -670,7 +670,7 @@ router.patch("/profile", authenticateToken, requireRole("MENTOR"), async (req: A
         const { name, teacherId, department, designation, section } = req.body;
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
-            include: { user: { select: { name: true, email: true } } },
+            include: { user: { select: { name: true, email: true, avatarUrl: true } } },
         });
 
         if (!mentor) return res.status(404).json({ error: "Mentor not found" });
@@ -684,7 +684,7 @@ router.patch("/profile", authenticateToken, requireRole("MENTOR"), async (req: A
                 section,
                 user: name ? { update: { name } } : undefined,
             } as any,
-            include: { user: { select: { name: true, email: true } } },
+            include: { user: { select: { name: true, email: true, avatarUrl: true } } },
         });
 
         return res.json({

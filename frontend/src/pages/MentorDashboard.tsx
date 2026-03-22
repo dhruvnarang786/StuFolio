@@ -274,8 +274,12 @@ const MentorDashboard = () => {
                 className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3.5 hover:bg-secondary/30 transition-colors gap-2 sm:gap-0"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center text-xs font-bold text-white shrink-0">
-                    {student.name.split(" ").map((n: string) => n[0]).join("")}
+                  <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center text-xs font-bold text-white shrink-0 overflow-hidden ring-1 ring-primary/20">
+                    {student.avatarUrl ? (
+                      <img src={student.avatarUrl} alt="Student Avatar" className="w-full h-full object-cover bg-muted" />
+                    ) : (
+                      student.name.split(" ").map((n: string) => n[0]).join("")
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

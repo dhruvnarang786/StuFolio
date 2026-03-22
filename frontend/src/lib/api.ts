@@ -7,6 +7,7 @@ export interface User {
     role: string;
     studentId?: string;
     mentorId?: string;
+    avatarUrl?: string | null;
 }
 
 export interface AuthResponse {
@@ -35,6 +36,7 @@ export interface Profile {
     year: string;
     cgpa: number;
     rank?: number | null;
+    avatarUrl?: string | null;
 }
 
 export interface StudentProfileResponse {
@@ -269,6 +271,7 @@ class ApiClient {
                 department: string;
                 designation: string;
                 section: string;
+                avatarUrl?: string | null;
             }
         }>("/mentor/profile");
     }
@@ -289,6 +292,7 @@ class ApiClient {
                 department: string;
                 designation: string;
                 section: string;
+                avatarUrl?: string | null;
             }
         }>("/mentor/profile", {
             method: "PATCH",
@@ -333,6 +337,13 @@ class ApiClient {
 
     markAllNotificationsRead() {
         return this.request<unknown>("/notifications/read-all", { method: "PATCH" });
+    }
+
+    updateAvatar(avatarUrl: string) {
+        return this.request<{ success: boolean; avatarUrl: string }>("/auth/avatar", {
+            method: "PUT",
+            body: JSON.stringify({ avatarUrl }),
+        });
     }
 }
 

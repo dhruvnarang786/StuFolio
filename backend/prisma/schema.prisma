@@ -14,6 +14,7 @@ model User {
   password      String
   name          String
   role          String
+  avatarUrl     String?
   createdAt     DateTime       @default(now())
   mentor        Mentor?
   notifications Notification[]

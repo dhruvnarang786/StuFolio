@@ -63,7 +63,7 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
   const [showNotifications, setShowNotifications] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -132,11 +132,10 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
-                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                  active
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${active
                     ? "nav-active-bar"
                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                }`}
+                  }`}
               >
                 <item.icon className={`h-[18px] w-[18px] shrink-0 transition-colors ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />
                 {!collapsed && <span>{item.label}</span>}
@@ -210,8 +209,12 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
             </div>
 
             {/* Avatar */}
-            <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:shadow-glow transition-all">
-              {role === "mentor" ? "DS" : "NG"}
+            <div className="h-9 w-9 rounded-lg bg-primary overflow-hidden flex items-center justify-center text-xs font-bold text-white cursor-pointer hover:shadow-glow transition-all ring-2 ring-transparent hover:ring-primary/20 ring-offset-2 ring-offset-background">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="User Avatar" className="w-full h-full object-cover bg-muted" />
+              ) : (
+                user?.name?.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) || (role === "mentor" ? "M" : "S")
+              )}
             </div>
           </div>
         </header>

@@ -83,6 +83,7 @@ router.post("/register", async (req: Request, res: Response) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
             },
@@ -131,6 +132,7 @@ router.post("/login", async (req: Request, res: Response) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
             },
@@ -167,6 +169,7 @@ router.get("/me", async (req: Request, res: Response) => {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
             },
@@ -324,6 +327,7 @@ router.post("/msal", async (req: Request, res: Response) => {
                         email: user.email,
                         name: user.name,
                         role: user.role,
+                        avatarUrl: user.avatarUrl,
                         studentId: user.student?.id,
                         mentorId: user.mentor?.id,
                     },
@@ -333,6 +337,34 @@ router.post("/msal", async (req: Request, res: Response) => {
     } catch (e) {
         console.error("MSAL Route error:", e);
         return res.status(500).json({ error: "Internal server error during MSAL login" });
+    }
+});
+
+// PUT /api/auth/avatar
+router.put("/avatar", async (req: Request, res: Response) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return res.status(401).json({ error: "Missing or invalid token" });
+        }
+
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; role: string };
+
+        const { avatarUrl } = req.body;
+        if (!avatarUrl) {
+            return res.status(400).json({ error: "avatarUrl is required" });
+        }
+
+        const user = await prisma.user.update({
+            where: { id: decoded.userId },
+            data: { avatarUrl },
+        });
+
+        return res.json({ success: true, avatarUrl: user.avatarUrl });
+    } catch (error) {
+        console.error("Avatar update error:", error);
+        return res.status(500).json({ error: "Failed to update avatar" });
     }
 });
 

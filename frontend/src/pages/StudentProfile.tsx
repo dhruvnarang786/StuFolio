@@ -78,7 +78,7 @@ const StudentProfile = () => {
         const today = new Date();
         today.setHours(12, 0, 0, 0);
         const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
-        
+
         // Start of the grid (Sunday, 52 weeks ago)
         const startDate = new Date(today);
         startDate.setDate(today.getDate() - dayOfWeek - (52 * 7));
@@ -87,7 +87,7 @@ const StudentProfile = () => {
             for (let di = 0; di < 7; di++) {
                 const currentDate = new Date(startDate);
                 currentDate.setDate(startDate.getDate() + (wi * 7) + di);
-                
+
                 const y = currentDate.getFullYear();
                 const m = String(currentDate.getMonth() + 1).padStart(2, '0');
                 const d = String(currentDate.getDate()).padStart(2, '0');
@@ -117,8 +117,12 @@ const StudentProfile = () => {
                 </div>
                 <div className="px-4 sm:px-6 pb-6 -mt-10 sm:-mt-12">
                     <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
-                        <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-primary flex items-center justify-center text-xl sm:text-2xl font-extrabold text-white border-4 border-card shadow-glow shrink-0">
-                            {initials}
+                        <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-primary flex items-center justify-center text-xl sm:text-2xl font-extrabold text-white border-4 border-card shadow-glow shrink-0 overflow-hidden relative">
+                            {profile.avatarUrl ? (
+                                <img src={profile.avatarUrl} alt="User Avatar" className="w-full h-full object-cover bg-muted" />
+                            ) : (
+                                initials
+                            )}
                         </div>
                         <div className="flex-1 min-w-0 overflow-hidden">
                             <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground truncate">{profile.name}</h2>

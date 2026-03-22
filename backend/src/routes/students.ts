@@ -29,7 +29,7 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
         }
 
         // Trigger background refresh (don't await)
-        refreshStudentProfiles(user.student.id).catch(err => 
+        refreshStudentProfiles(user.student.id).catch(err =>
             console.error("[API] Background refresh triggered from /me failed:", err)
         );
 
@@ -76,6 +76,7 @@ router.get("/me", authenticateToken, requireRole("STUDENT"), async (req: AuthReq
         return res.json({
             profile: {
                 name: user.name,
+                avatarUrl: user.avatarUrl,
                 enrollment: s.enrollment,
                 section: s.section,
                 semester: s.semester,
@@ -117,7 +118,7 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
         if (!user?.student) return res.status(404).json({ error: "Student not found" });
 
         // Trigger background refresh (don't await)
-        refreshStudentProfiles(user.student.id).catch(err => 
+        refreshStudentProfiles(user.student.id).catch(err =>
             console.error("[API] Background refresh triggered from /me/profile failed:", err)
         );
 
@@ -133,6 +134,7 @@ router.get("/me/profile", authenticateToken, requireRole("STUDENT"), async (req:
         return res.json({
             profile: {
                 name: user.name,
+                avatarUrl: user.avatarUrl,
                 enrollment: s.enrollment,
                 email: user.email,
                 section: s.section,
@@ -516,7 +518,7 @@ router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthReq
         const student = await prisma.student.findUnique({
             where: { id: req.params.id as string },
             include: {
-                user: { select: { name: true, email: true } },
+                user: { select: { name: true, email: true, avatarUrl: true } },
                 semesterCGPAs: { orderBy: { semester: "asc" } },
                 academicRecords: { include: { subject: true } },
                 attendances: { include: { subject: true } },
@@ -536,6 +538,7 @@ router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthReq
                 id: student.id,
                 name: (student as any).user.name,
                 email: (student as any).user.email,
+                avatarUrl: (student as any).user.avatarUrl,
                 enrollment: student.enrollment,
                 section: student.section,
                 semester: student.semester,

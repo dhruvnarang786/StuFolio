@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import DashboardLayout from "@/components/DashboardLayout";
+import { AvatarSelector } from "@/components/AvatarSelector";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -46,7 +47,7 @@ const platformColors: Record<string, string> = {
 };
 
 const SettingsPage = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [profiles, setProfiles] = useState<CodingProfile[]>([]);
@@ -72,6 +73,13 @@ const SettingsPage = () => {
         showCoding: true,
         showAttendance: false,
     });
+
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatarUrl || null);
+    const [updatingAvatar, setUpdatingAvatar] = useState(false);
+
+    useEffect(() => {
+        if (user?.avatarUrl) setAvatarUrl(user.avatarUrl);
+    }, [user?.avatarUrl]);
 
     // Profile state
     const [profileForm, setProfileForm] = useState({
@@ -259,6 +267,23 @@ const SettingsPage = () => {
         }
     };
 
+    const handleAvatarSelect = async (url: string) => {
+        if (updatingAvatar) return;
+        setUpdatingAvatar(true);
+        try {
+            const res = await api.updateAvatar(url);
+            if (res.success && user) {
+                setAvatarUrl(res.avatarUrl);
+                updateUser({ ...user, avatarUrl: res.avatarUrl });
+                showSuccess("Avatar updated successfully!");
+            }
+        } catch (err: any) {
+            showError("Failed to update avatar.");
+        } finally {
+            setUpdatingAvatar(false);
+        }
+    };
+
     const startEditing = (platform: string, currentHandle: string) => {
         setEditingPlatform(platform);
         setHandleInput(currentHandle);
@@ -323,15 +348,26 @@ const SettingsPage = () => {
                         <User className="h-5 w-5 text-primary" />
                         <h3 className="font-display font-semibold text-foreground">Profile Information</h3>
                     </div>
-                    <div className="flex items-center gap-4 mb-5">
-                        <div className="h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center text-xl font-bold text-white shadow-glow">
-                            {initials}
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-foreground">{profileForm.name || user?.name || "User"}</p>
-                            <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
+                    <div className="flex flex-col sm:flex-row gap-6 mb-8 items-start sm:items-center">
+                        <div className="flex gap-4 items-center">
+                            <div className="h-20 w-20 rounded-2xl bg-gradient-primary flex items-center justify-center text-2xl font-bold text-white shadow-glow overflow-hidden shrink-0 border-2 border-primary/20">
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover bg-muted" />
+                                ) : (
+                                    initials
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-foreground">{profileForm.name || user?.name || "User"}</p>
+                                <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
+                            </div>
                         </div>
                     </div>
+
+                    <div className="mb-8 border-b border-border pb-8">
+                        <AvatarSelector currentAvatarUrl={avatarUrl} onSelect={handleAvatarSelect} />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="md:col-span-2">
                             <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
