@@ -37,6 +37,7 @@ const studentNavItems = [
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: BookOpen, label: "Attendance", path: "/attendance" },
   { icon: Target, label: "Career & Skills", path: "/career" },
+  { icon: GraduationCap, label: "Academics", path: "/academics" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

@@ -24,6 +24,7 @@ import MentorAnalytics from "./pages/MentorAnalytics";
 import MentorAttendancePage from "./pages/MentorAttendancePage";
 import MentorAcademicRecordsPage from "./pages/MentorAcademicRecordsPage";
 import SettingsPage from "./pages/SettingsPage";
+import StudentAcademicsPage from "./pages/StudentAcademicsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +67,7 @@ const App = () => (
               <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute requiredRole="STUDENT"><AttendancePage /></ProtectedRoute>} />
               <Route path="/career" element={<ProtectedRoute requiredRole="STUDENT"><CareerPage /></ProtectedRoute>} />
+              <Route path="/academics" element={<ProtectedRoute requiredRole="STUDENT"><StudentAcademicsPage /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 

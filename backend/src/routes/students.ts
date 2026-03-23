@@ -4,6 +4,7 @@ import { AuthRequest, authenticateToken, requireRole } from "../middleware/auth"
 import { fetchPlatformStats } from "../services/platformFetcher";
 import { refreshStudentProfiles } from "../services/profileService";
 import { updateStudentStreak } from "../services/streakService";
+import { AcademicSyncService } from "../services/academicSyncService";
 
 const router = Router();
 
@@ -248,6 +249,8 @@ router.get("/me/academics", authenticateToken, requireRole("STUDENT"), async (re
             records: user.student.academicRecords.map((r) => ({
                 subject: r.subject.name,
                 code: r.subject.code,
+                internalMarks: r.internalMarks,
+                externalMarks: r.externalMarks,
                 marks: r.marks,
                 maxMarks: r.maxMarks,
                 grade: r.grade,
@@ -575,6 +578,53 @@ router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthReq
     } catch (error: any) {
         console.error("Student detail error:", error);
         return res.status(500).json({ error: "Failed to load student" });
+    }
+});
+
+// GET /api/students/me/sync-portal/captcha — start sync session and get captcha
+router.get("/me/sync-portal/captcha", authenticateToken, requireRole("STUDENT"), async (req: AuthRequest, res: Response) => {
+    try {
+        const result = await AcademicSyncService.getCaptcha();
+        return res.json(result);
+    } catch (error: any) {
+        console.error("Fetch captcha error:", error);
+        return res.status(500).json({ error: "Failed to connect to GGSIPU portal" });
+    }
+});
+
+// POST /api/students/me/sync-portal — perform sync with credentials and captcha
+router.post("/me/sync-portal", authenticateToken, requireRole("STUDENT"), async (req: AuthRequest, res: Response) => {
+    try {
+        const { syncId, username, password, captcha } = req.body;
+        console.log(`[Route] POST /me/sync-portal | studentId: ${req.user!.userId} | syncId: ${syncId}`);
+
+        if (!syncId || !username || !password || !captcha) {
+            return res.status(400).json({ error: "All fields are required (Username, Password, Captcha)" });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user!.userId },
+            include: { student: true }
+        });
+
+        if (!user?.student) {
+            return res.status(404).json({ error: "Student profile not found" });
+        }
+
+        console.log(`[Route] Starting academic sync for ${user.student.enrollment}...`);
+        const result = await AcademicSyncService.syncForStudent(
+            user.student.id,
+            syncId,
+            username,
+            password,
+            captcha
+        );
+
+        console.log(`[Route] Sync result:`, result);
+        return res.json(result);
+    } catch (error: any) {
+        console.error("[Route] Sync error:", error);
+        return res.status(500).json({ error: error.message || "Failed to sync with university portal" });
     }
 });
 

@@ -14,8 +14,8 @@ model User {
   password      String
   name          String
   role          String
-  avatarUrl     String?
   createdAt     DateTime       @default(now())
+  avatarUrl     String?
   mentor        Mentor?
   notifications Notification[]
   student       Student?
@@ -78,15 +78,17 @@ model SemesterCGPA {
 }
 
 model AcademicRecord {
-  id        String  @id @default(uuid())
-  studentId String
-  subjectId String
-  marks     Float
-  maxMarks  Float   @default(100)
-  grade     String?
-  semester  String
-  student   Student @relation(fields: [studentId], references: [id])
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  id            String  @id @default(uuid())
+  studentId     String
+  subjectId     String
+  internalMarks Float?
+  externalMarks Float?
+  marks         Float
+  maxMarks      Float   @default(100)
+  grade         String?
+  semester      String
+  student       Student @relation(fields: [studentId], references: [id])
+  subject       Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([studentId, subjectId, semester])
 }

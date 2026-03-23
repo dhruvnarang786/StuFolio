@@ -169,7 +169,21 @@ class ApiClient {
     }
 
     getStudentAcademics() {
-        return this.request<unknown>("/students/me/academics");
+        return this.request<{
+            semesterCGPAs: { sem: string; cgpa: number }[];
+            records: { code: string; subject: string; marks: number; grade: string | null; semester: string }[];
+        }>("/students/me/academics");
+    }
+
+    getSyncPortalCaptcha() {
+        return this.request<{ syncId: string; captchaBase64: string }>("/students/me/sync-portal/captcha");
+    }
+
+    syncPortal(data: { syncId: string; username: string; password: string; captcha: string }) {
+        return this.request<{ success: boolean; count: number }>("/students/me/sync-portal", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
     }
 
     // Coding Profiles
