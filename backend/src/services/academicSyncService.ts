@@ -1,6 +1,8 @@
 import puppeteer, { Browser, Page } from "puppeteer";
 import prisma from "../lib/prisma";
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
 
 // Simple in-memory storage for active sync sessions (preserving the browser/page for captcha)
 const activeSyncSessions = new Map<string, { browser: Browser; page: Page; createdAt: number }>();
@@ -16,13 +18,51 @@ setInterval(() => {
     }
 }, 10 * 60 * 1000);
 
+const findChromeInRenderCache = () => {
+    const cacheDir = "/opt/render/.cache/puppeteer/chrome";
+    if (!fs.existsSync(cacheDir)) return null;
+
+    try {
+        // Recursively find the first file named 'chrome'
+        const findExec = (dir: string): string | null => {
+            const files = fs.readdirSync(dir);
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                if (fs.statSync(fullPath).isDirectory()) {
+                    const found = findExec(fullPath);
+                    if (found) return found;
+                } else if (file === "chrome" || file === "google-chrome") {
+                    return fullPath;
+                }
+            }
+            return null;
+        };
+        return findExec(cacheDir);
+    } catch (e) {
+        console.error("[Sync] Error searching for chrome in cache:", e);
+        return null;
+    }
+};
+
 export class AcademicSyncService {
     /**
      * Starts a sync session by navigating to the login page and extracting the captcha.
      */
     static async getCaptcha(): Promise<{ syncId: string; captchaBase64: string }> {
+        let executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+
+        // Special case for Render: dynamic discovery
+        if (!executablePath && process.env.RENDER) {
+            executablePath = findChromeInRenderCache() || undefined;
+            if (executablePath) {
+                console.log("[Sync] Render detected, dynamically found chrome at:", executablePath);
+            } else {
+                console.warn("[Sync] Render detected but no chrome executable found in /opt/render/.cache/puppeteer/chrome");
+            }
+        }
+
         const browser = await puppeteer.launch({
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+            executablePath,
             headless: true,
             args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
         });
