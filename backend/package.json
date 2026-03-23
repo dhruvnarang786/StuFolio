@@ -10,7 +10,7 @@
         "db:push": "prisma db push",
         "db:studio": "prisma studio",
         "seed": "tsx prisma/seed.ts",
-        "postinstall": "prisma generate"
+        "postinstall": "prisma generate && npx puppeteer browsers install chrome"
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",
