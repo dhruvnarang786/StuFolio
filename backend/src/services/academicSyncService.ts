@@ -233,53 +233,84 @@ export class AcademicSyncService {
                     .filter(o => o.value && o.value !== "0");
             });
 
-            console.log(`[Sync] Found ${options.length} semesters to sync.`);
+            console.log(`[Sync] Found ${options.length} semesters to sync. Parallelizing...`);
 
-            for (const option of options) {
-                console.log(`[Sync] Fetching results for ${option.text}...`);
-                await page.select("#euno", option.value);
-                await page.click("input[type='submit'], button.btn-primary, #btnGetResult").catch(() => null);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+            // 4. Parallelize semester fetching
+            const CONCURRENCY_LIMIT = 3; // Limit to 3 parallel pages to avoid overloading
+            const results: any[] = [];
+            
+            for (let i = 0; i < options.length; i += CONCURRENCY_LIMIT) {
+                const chunk = options.slice(i, i + CONCURRENCY_LIMIT);
+                const chunkResults = await Promise.all(chunk.map(async (option) => {
+                    const newPage = await browser.newPage();
+                    try {
+                        await newPage.setUserAgent(await page.evaluate(() => navigator.userAgent));
+                        await newPage.setViewport({ width: 1280, height: 800 });
+                        
+                        // Navigate to the same home page
+                        await newPage.goto("https://examweb.ggsipu.ac.in/web/student/studenthome.jsp", { 
+                            waitUntil: "networkidle2",
+                            timeout: 20000 
+                        });
 
-                const semesterData = await page.evaluate((semName) => {
-                    const doc = (globalThis as any).document;
-                    const tables = Array.from(doc.querySelectorAll("table")) as any[];
-                    const marksTable = tables.find(t => t.innerText.toLowerCase().includes("paper code") && t.innerText.toLowerCase().includes("total"));
-                    
-                    if (!marksTable) return [];
+                        console.log(`[Sync] [Parallel] Fetching results for ${option.text}...`);
+                        await newPage.waitForSelector("#euno", { timeout: 10000 });
+                        await newPage.select("#euno", option.value);
+                        
+                        await Promise.all([
+                            newPage.click("input[type='submit'], button.btn-primary, #btnGetResult"),
+                            newPage.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => null)
+                        ]);
 
-                    const rows = Array.from(marksTable.querySelectorAll("tr"));
-                    const headers = Array.from((rows[0] as any).cells).map((c: any) => c.innerText.trim().toLowerCase());
-                    
-                    // Find indices dynamically
-                    const codeIdx = headers.findIndex(h => h.includes("code"));
-                    const nameIdx = headers.findIndex(h => h.includes("paper name") || h.includes("subject"));
-                    const internalIdx = headers.findIndex(h => h.includes("internal"));
-                    const externalIdx = headers.findIndex(h => h.includes("external"));
-                    const totalIdx = headers.findIndex(h => h.includes("total"));
-                    const creditsIdx = headers.findIndex(h => h.includes("credit") || h.includes("cr"));
+                        const semesterData = await newPage.evaluate((semName) => {
+                            const doc = (globalThis as any).document;
+                            const tables = Array.from(doc.querySelectorAll("table")) as any[];
+                            const marksTable = tables.find(t => t.innerText.toLowerCase().includes("paper code") && t.innerText.toLowerCase().includes("total"));
+                            
+                            if (!marksTable) return [];
 
-                    const dataRows = rows.filter(r => {
-                        const cells = (r as any).cells;
-                        return cells.length >= 5 && !isNaN(parseInt(cells[0].innerText.trim()));
-                    });
+                            const rows = Array.from(marksTable.querySelectorAll("tr"));
+                            const headers = Array.from((rows[0] as any).cells).map((c: any) => c.innerText.trim().toLowerCase());
+                            
+                            const codeIdx = headers.findIndex(h => h.includes("code"));
+                            const nameIdx = headers.findIndex(h => h.includes("paper name") || h.includes("subject"));
+                            const internalIdx = headers.findIndex(h => h.includes("internal"));
+                            const externalIdx = headers.findIndex(h => h.includes("external"));
+                            const totalIdx = headers.findIndex(h => h.includes("total"));
+                            const creditsIdx = headers.findIndex(h => h.includes("credit") || h.includes("cr"));
 
-                    return dataRows.map(row => {
-                        const cols = Array.from((row as any).cells).map((c: any) => c.innerText.trim());
-                        return {
-                            code: codeIdx !== -1 ? cols[codeIdx] : cols[1],
-                            name: nameIdx !== -1 ? cols[nameIdx] : cols[2], 
-                            internalMarks: internalIdx !== -1 ? parseFloat(cols[internalIdx]) || 0 : 0,
-                            externalMarks: externalIdx !== -1 ? parseFloat(cols[externalIdx]) || 0 : 0,
-                            marks: totalIdx !== -1 ? parseFloat(cols[totalIdx]) || 0 : 0,
-                            credits: creditsIdx !== -1 ? parseFloat(cols[creditsIdx]) || 4 : 4, // Default to 4 if not found
-                            semester: semName
-                        };
-                    });
-                }, option.text);
+                            const dataRows = rows.filter(r => {
+                                const cells = (r as any).cells;
+                                return cells.length >= 5 && !isNaN(parseInt(cells[0].innerText.trim()));
+                            });
 
-                allScrapedData.push(...semesterData);
+                            return dataRows.map(row => {
+                                const cols = Array.from((row as any).cells).map((c: any) => c.innerText.trim());
+                                return {
+                                    code: codeIdx !== -1 ? cols[codeIdx] : cols[1],
+                                    name: nameIdx !== -1 ? cols[nameIdx] : cols[2], 
+                                    internalMarks: internalIdx !== -1 ? parseFloat(cols[internalIdx]) || 0 : 0,
+                                    externalMarks: externalIdx !== -1 ? parseFloat(cols[externalIdx]) || 0 : 0,
+                                    marks: totalIdx !== -1 ? parseFloat(cols[totalIdx]) || 0 : 0,
+                                    credits: creditsIdx !== -1 ? parseFloat(cols[creditsIdx]) || 4 : 4,
+                                    semester: semName
+                                };
+                            });
+                        }, option.text);
+
+                        return semesterData;
+                    } catch (err) {
+                        console.error(`[Sync] [Parallel] Error fetching ${option.text}:`, err);
+                        return [];
+                    } finally {
+                        await newPage.close().catch(() => {});
+                    }
+                }));
+
+                results.push(...chunkResults.flat());
             }
+
+            allScrapedData.push(...results);
 
             console.log(`[Sync] Total scraped marks: ${allScrapedData.length}`);
 
@@ -300,97 +331,102 @@ export class AcademicSyncService {
         }
     }
     private static async updateDatabaseWithScrapedData(studentId: string, data: any[]) {
-        for (const item of data) {
-            // Find or create subject
-            const subject = await prisma.subject.upsert({
-                where: { code: item.code },
-                create: {
-                    code: item.code,
-                    name: item.name,
-                    credits: item.credits,
-                    semester: item.semester
-                },
-                update: {
-                    name: item.name,
-                    credits: item.credits,
-                    semester: item.semester
-                }
-            });
+        console.log(`[Sync] Updating database with ${data.length} records for student ${studentId}...`);
 
-            const gp = this.getGradePoint(item.marks);
-            const letterGrade = this.getLetterGrade(item.marks);
+        // 1. Unique subjects first to avoid redundant upserts
+        const uniqueSubjects = Array.from(new Map(data.map(item => [item.code, item])).values());
+        
+        // 2. Transact all subject upserts and record updates
+        await prisma.$transaction(async (tx) => {
+            const subjectMap = new Map<string, string>();
 
-            await prisma.academicRecord.upsert({
-                where: {
-                    studentId_subjectId_semester: {
-                        studentId,
-                        subjectId: subject.id,
+            // Upsert all subjects first
+            for (const item of uniqueSubjects) {
+                const sub = await tx.subject.upsert({
+                    where: { code: item.code },
+                    create: {
+                        code: item.code,
+                        name: item.name,
+                        credits: item.credits,
+                        semester: item.semester
+                    },
+                    update: {
+                        name: item.name,
+                        credits: item.credits,
                         semester: item.semester
                     }
-                },
-                create: {
-                    studentId,
-                    subjectId: subject.id,
-                    internalMarks: item.internalMarks,
-                    externalMarks: item.externalMarks,
-                    marks: item.marks,
-                    grade: letterGrade,
-                    semester: item.semester,
-                    maxMarks: 100
-                },
-                update: {
-                    internalMarks: item.internalMarks,
-                    externalMarks: item.externalMarks,
-                    marks: item.marks,
-                    grade: letterGrade
-                }
-            });
-        }
-
-        // Recalculate CGPA
-        const allRecords = await prisma.academicRecord.findMany({
-            where: { studentId }
-        });
-
-        if (allRecords.length > 0) {
-            const semesters = [...new Set(allRecords.map(r => r.semester))];
-            const sgpaValues: number[] = [];
-
-            for (const sem of semesters) {
-                const semRecords = await prisma.academicRecord.findMany({
-                    where: { studentId, semester: sem },
-                    include: { subject: true }
                 });
+                subjectMap.set(item.code, sub.id);
+            }
 
-                let totalPoints = 0;
-                let totalCredits = 0;
+            // 3. Prepare SGPA calculation in memory
+            const semDataMap = new Map<string, { totalPoints: number; totalCredits: number; records: any[] }>();
 
-                for (const record of semRecords) {
-                    const gp = this.getGradePoint(record.marks);
-                    const credits = record.subject.credits || 0;
-                    totalPoints += gp * credits;
-                    totalCredits += credits;
+            for (const item of data) {
+                const subjectId = subjectMap.get(item.code)!;
+                const gp = this.getGradePoint(item.marks);
+                const letterGrade = this.getLetterGrade(item.marks);
+
+                // Add to semester calculation
+                if (!semDataMap.has(item.semester)) {
+                    semDataMap.set(item.semester, { totalPoints: 0, totalCredits: 0, records: [] });
                 }
+                const semInfo = semDataMap.get(item.semester)!;
+                semInfo.totalPoints += gp * item.credits;
+                semInfo.totalCredits += item.credits;
 
-                const sgpa = totalCredits > 0 ? totalPoints / totalCredits : 0;
+                // Upsert academic record
+                await tx.academicRecord.upsert({
+                    where: {
+                        studentId_subjectId_semester: {
+                            studentId,
+                            subjectId,
+                            semester: item.semester
+                        }
+                    },
+                    create: {
+                        studentId,
+                        subjectId,
+                        internalMarks: item.internalMarks,
+                        externalMarks: item.externalMarks,
+                        marks: item.marks,
+                        grade: letterGrade,
+                        semester: item.semester,
+                        maxMarks: 100
+                    },
+                    update: {
+                        internalMarks: item.internalMarks,
+                        externalMarks: item.externalMarks,
+                        marks: item.marks,
+                        grade: letterGrade
+                    }
+                });
+            }
+
+            // 4. Update Semester CGPAs and calculate overall CGPA
+            const sgpaValues: number[] = [];
+            for (const [sem, info] of semDataMap.entries()) {
+                const sgpa = info.totalCredits > 0 ? info.totalPoints / info.totalCredits : 0;
                 sgpaValues.push(sgpa);
-                
-                await prisma.semesterCGPA.upsert({
+
+                await tx.semesterCGPA.upsert({
                     where: { studentId_semester: { studentId, semester: sem } },
                     create: { studentId, semester: sem, cgpa: Number(sgpa.toFixed(2)) },
                     update: { cgpa: Number(sgpa.toFixed(2)) }
                 });
             }
 
-            // Recalculate overall CGPA based on user's formula: sum of SGPA / number of SGPA
+            // 5. Update overall student CGPA
             const newCGPA = sgpaValues.length > 0 
                 ? sgpaValues.reduce((sum, val) => sum + val, 0) / sgpaValues.length 
                 : 0;
 
-            await prisma.student.update({
+            await tx.student.update({
                 where: { id: studentId },
                 data: { cgpa: Number(newCGPA.toFixed(2)) }
             });
-        }
+        });
+
+        console.log(`[Sync] Database update complete for ${studentId}.`);
     }
 }
