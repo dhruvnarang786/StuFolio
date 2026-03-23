@@ -135,6 +135,7 @@ const StudentAcademicsPage = () => {
                                     <tr>
                                         <th className="px-6 py-4">Code</th>
                                         <th className="px-6 py-4">Subject</th>
+                                        <th className="px-6 py-4">Credits</th>
                                         <th className="px-6 py-4">Internal</th>
                                         <th className="px-6 py-4">External</th>
                                         <th className="px-6 py-4">Total</th>
@@ -145,7 +146,8 @@ const StudentAcademicsPage = () => {
                                     {filteredRecords.length > 0 ? filteredRecords.map((r: any, i: number) => (
                                         <tr key={i} className="border-b hover:bg-secondary/10 transition-colors">
                                             <td className="px-6 py-4 font-mono text-xs">{r.code}</td>
-                                            <td className="px-6 py-4 text-sm font-semibold">{r.subject}</td>
+                                            <td className="px-6 py-4 text-sm font-semibold">{r.subject.name || r.subject}</td>
+                                            <td className="px-6 py-4 text-sm font-bold">{r.subject.credits || "—"}</td>
                                             <td className="px-6 py-4 text-sm">{r.internalMarks || "—"}</td>
                                             <td className="px-6 py-4 text-sm">{r.externalMarks || "—"}</td>
                                             <td className="px-6 py-4 text-sm font-bold">{r.marks}/100</td>

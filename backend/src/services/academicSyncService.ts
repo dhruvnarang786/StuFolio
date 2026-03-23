@@ -54,8 +54,31 @@ const findChromeInRenderCache = () => {
     }
 };
 
+
 export class AcademicSyncService {
     private static browserInstance: Browser | null = null;
+
+    private static getGradePoint(marks: number): number {
+        if (marks >= 90) return 10;
+        if (marks >= 75) return 9;
+        if (marks >= 65) return 8;
+        if (marks >= 55) return 7;
+        if (marks >= 50) return 6;
+        if (marks >= 45) return 5;
+        if (marks >= 40) return 4;
+        return 0;
+    }
+
+    private static getLetterGrade(marks: number): string {
+        if (marks >= 90) return "O";
+        if (marks >= 75) return "A+";
+        if (marks >= 65) return "A";
+        if (marks >= 55) return "B+";
+        if (marks >= 50) return "B";
+        if (marks >= 45) return "C";
+        if (marks >= 40) return "P";
+        return "F";
+    }
 
     private static async getBrowser(): Promise<Browser> {
         if (this.browserInstance) {
@@ -226,20 +249,30 @@ export class AcademicSyncService {
                     if (!marksTable) return [];
 
                     const rows = Array.from(marksTable.querySelectorAll("tr"));
+                    const headers = Array.from((rows[0] as any).cells).map((c: any) => c.innerText.trim().toLowerCase());
+                    
+                    // Find indices dynamically
+                    const codeIdx = headers.findIndex(h => h.includes("code"));
+                    const nameIdx = headers.findIndex(h => h.includes("paper name") || h.includes("subject"));
+                    const internalIdx = headers.findIndex(h => h.includes("internal"));
+                    const externalIdx = headers.findIndex(h => h.includes("external"));
+                    const totalIdx = headers.findIndex(h => h.includes("total"));
+                    const creditsIdx = headers.findIndex(h => h.includes("credit") || h.includes("cr"));
+
                     const dataRows = rows.filter(r => {
                         const cells = (r as any).cells;
-                        return cells.length >= 6 && !isNaN(parseInt(cells[0].innerText.trim()));
+                        return cells.length >= 5 && !isNaN(parseInt(cells[0].innerText.trim()));
                     });
 
                     return dataRows.map(row => {
                         const cols = Array.from((row as any).cells).map((c: any) => c.innerText.trim());
                         return {
-                            code: cols[1],
-                            name: cols[2], 
-                            internalMarks: parseFloat(cols[3]) || 0,
-                            externalMarks: parseFloat(cols[4]) || 0,
-                            marks: parseFloat(cols[5]) || 0,
-                            grade: null,
+                            code: codeIdx !== -1 ? cols[codeIdx] : cols[1],
+                            name: nameIdx !== -1 ? cols[nameIdx] : cols[2], 
+                            internalMarks: internalIdx !== -1 ? parseFloat(cols[internalIdx]) || 0 : 0,
+                            externalMarks: externalIdx !== -1 ? parseFloat(cols[externalIdx]) || 0 : 0,
+                            marks: totalIdx !== -1 ? parseFloat(cols[totalIdx]) || 0 : 0,
+                            credits: creditsIdx !== -1 ? parseFloat(cols[creditsIdx]) || 4 : 4, // Default to 4 if not found
                             semester: semName
                         };
                     });
@@ -274,13 +307,18 @@ export class AcademicSyncService {
                 create: {
                     code: item.code,
                     name: item.name,
+                    credits: item.credits,
                     semester: item.semester
                 },
                 update: {
                     name: item.name,
+                    credits: item.credits,
                     semester: item.semester
                 }
             });
+
+            const gp = this.getGradePoint(item.marks);
+            const letterGrade = this.getLetterGrade(item.marks);
 
             await prisma.academicRecord.upsert({
                 where: {
@@ -296,7 +334,7 @@ export class AcademicSyncService {
                     internalMarks: item.internalMarks,
                     externalMarks: item.externalMarks,
                     marks: item.marks,
-                    grade: item.grade,
+                    grade: letterGrade,
                     semester: item.semester,
                     maxMarks: 100
                 },
@@ -304,7 +342,7 @@ export class AcademicSyncService {
                     internalMarks: item.internalMarks,
                     externalMarks: item.externalMarks,
                     marks: item.marks,
-                    grade: item.grade
+                    grade: letterGrade
                 }
             });
         }
@@ -315,29 +353,44 @@ export class AcademicSyncService {
         });
 
         if (allRecords.length > 0) {
-            // Simple calculation: Avg of marks / 10
-            const totalMarksPercent = allRecords.reduce((sum, r) => sum + (r.marks / r.maxMarks), 0);
-            const avgPercent = (totalMarksPercent / allRecords.length) * 100;
-            const newCGPA = Number((avgPercent / 10).toFixed(2));
-
-            await prisma.student.update({
-                where: { id: studentId },
-                data: { cgpa: newCGPA }
-            });
-
-            // Update semester-wise CGPA
             const semesters = [...new Set(allRecords.map(r => r.semester))];
+            const sgpaValues: number[] = [];
+
             for (const sem of semesters) {
-                const semRecords = allRecords.filter(r => r.semester === sem);
-                const semTotal = semRecords.reduce((sum, r) => sum + (r.marks / r.maxMarks), 0);
-                const semAvg = (semTotal / semRecords.length) * 10;
+                const semRecords = await prisma.academicRecord.findMany({
+                    where: { studentId, semester: sem },
+                    include: { subject: true }
+                });
+
+                let totalPoints = 0;
+                let totalCredits = 0;
+
+                for (const record of semRecords) {
+                    const gp = this.getGradePoint(record.marks);
+                    const credits = record.subject.credits || 0;
+                    totalPoints += gp * credits;
+                    totalCredits += credits;
+                }
+
+                const sgpa = totalCredits > 0 ? totalPoints / totalCredits : 0;
+                sgpaValues.push(sgpa);
                 
                 await prisma.semesterCGPA.upsert({
                     where: { studentId_semester: { studentId, semester: sem } },
-                    create: { studentId, semester: sem, cgpa: Number(semAvg.toFixed(2)) },
-                    update: { cgpa: Number(semAvg.toFixed(2)) }
+                    create: { studentId, semester: sem, cgpa: Number(sgpa.toFixed(2)) },
+                    update: { cgpa: Number(sgpa.toFixed(2)) }
                 });
             }
+
+            // Recalculate overall CGPA based on user's formula: sum of SGPA / number of SGPA
+            const newCGPA = sgpaValues.length > 0 
+                ? sgpaValues.reduce((sum, val) => sum + val, 0) / sgpaValues.length 
+                : 0;
+
+            await prisma.student.update({
+                where: { id: studentId },
+                data: { cgpa: Number(newCGPA.toFixed(2)) }
+            });
         }
     }
 }
