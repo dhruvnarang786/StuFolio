@@ -45,7 +45,7 @@ const AcademicSyncModal = ({ isOpen, onClose, onSuccess }: AcademicSyncModalProp
             setCaptchaData(data);
         } catch (err: any) {
             console.error("Captcha fetch error:", err);
-            setError("Could not connect to GGSIPU portal. Please check your internet connection.");
+            setError(err.message || "Could not connect to GGSIPU portal. Please check your internet connection.");
         } finally {
             setLoading(false);
         }
