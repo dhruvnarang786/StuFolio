@@ -59,6 +59,10 @@ const StudentAcademicsPage = () => {
 
     const filteredRecords = records.filter((r: any) => {
         return selectedSemester === "ALL" || r.semester === selectedSemester;
+    }).sort((a: any, b: any) => {
+        const semA = parseInt(a.semester) || 0;
+        const semB = parseInt(b.semester) || 0;
+        return semA - semB;
     });
 
     return (
@@ -128,6 +132,7 @@ const StudentAcademicsPage = () => {
                             <table className="w-full text-left">
                                 <thead className="bg-secondary/10 text-[10px] uppercase font-bold text-muted-foreground border-b">
                                     <tr>
+                                        {selectedSemester === "ALL" && <th className="px-6 py-4">Sem</th>}
                                         <th className="px-6 py-4">Code</th>
                                         <th className="px-6 py-4">Subject</th>
                                         <th className="px-6 py-4">Credits</th>
@@ -140,6 +145,13 @@ const StudentAcademicsPage = () => {
                                 <tbody>
                                     {filteredRecords.length > 0 ? filteredRecords.map((r: any, i: number) => (
                                         <tr key={i} className="border-b hover:bg-secondary/10 transition-colors">
+                                            {selectedSemester === "ALL" && (
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
+                                                        SEM {r.semester}
+                                                    </span>
+                                                </td>
+                                            )}
                                             <td className="px-6 py-4 font-mono text-xs">{r.code}</td>
                                             <td className="px-6 py-4 text-sm font-semibold">{r.subject.name || r.subject}</td>
                                             <td className="px-6 py-4 text-sm font-bold">{r.subject.credits || "—"}</td>
@@ -148,7 +160,7 @@ const StudentAcademicsPage = () => {
                                             <td className="px-6 py-4 text-sm font-bold">{r.marks}/100</td>
                                             <td className="px-6 py-4 text-sm font-bold text-primary">{r.grade || "—"}</td>
                                         </tr>
-                                    )) : <tr><td colSpan={6} className="px-6 py-10 text-center italic text-muted-foreground">No records.</td></tr>}
+                                    )) : <tr><td colSpan={selectedSemester === "ALL" ? 8 : 7} className="px-6 py-10 text-center italic text-muted-foreground">No records.</td></tr>}
                                 </tbody>
                             </table>
                         </div>
