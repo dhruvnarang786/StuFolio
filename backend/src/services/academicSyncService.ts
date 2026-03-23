@@ -3,6 +3,7 @@ import prisma from "../lib/prisma";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import syllabusCredits from "../data/syllabus_credits.json";
 
 // Simple in-memory storage for active sync sessions (preserving the browser/page for captcha)
 const activeSyncSessions = new Map<string, { browser: Browser; page: Page; createdAt: number }>();
@@ -230,89 +231,71 @@ export class AcademicSyncService {
                 if (!sel) return [];
                 return Array.from(sel.options)
                     .map((o: any) => ({ value: o.value, text: o.innerText.trim() }))
-                    .filter(o => o.value && o.value !== "0");
+                    .filter(o => o.value && o.value !== "0" && o.text.toUpperCase() !== "ALL" && !o.text.toLowerCase().includes("all semesters"));
             });
 
-            console.log(`[Sync] Found ${options.length} semesters to sync. Parallelizing...`);
+            console.log(`[Sync] Found ${options.length} semesters to sync. Fetching sequentially for stability...`);
 
-            // 4. Parallelize semester fetching
-            const CONCURRENCY_LIMIT = 3; // Limit to 3 parallel pages to avoid overloading
-            const results: any[] = [];
-            
-            for (let i = 0; i < options.length; i += CONCURRENCY_LIMIT) {
-                const chunk = options.slice(i, i + CONCURRENCY_LIMIT);
-                const chunkResults = await Promise.all(chunk.map(async (option) => {
-                    const newPage = await browser.newPage();
-                    try {
-                        await newPage.setUserAgent(await page.evaluate(() => navigator.userAgent));
-                        await newPage.setViewport({ width: 1280, height: 800 });
+            // 4. Fetch semesters sequentially to preserve portal session state
+            for (const option of options) {
+                console.log(`[Sync] Fetching results for ${option.text}...`);
+                
+                try {
+                    await page.waitForSelector("#euno", { timeout: 10000 });
+                    await page.select("#euno", option.value);
+                    
+                    await Promise.all([
+                        page.click("input[type='submit'], button.btn-primary, #btnGetResult"),
+                        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => null)
+                    ]);
+
+                    const semesterData = await page.evaluate((semName) => {
+                        const doc = (globalThis as any).document;
+                        const tables = Array.from(doc.querySelectorAll("table")) as any[];
+                        const marksTable = tables.find(t => t.innerText.toLowerCase().includes("paper code") && t.innerText.toLowerCase().includes("total"));
                         
-                        // Navigate to the same home page
-                        await newPage.goto("https://examweb.ggsipu.ac.in/web/student/studenthome.jsp", { 
-                            waitUntil: "networkidle2",
-                            timeout: 20000 
+                        if (!marksTable) return [];
+
+                        const rows = Array.from(marksTable.querySelectorAll("tr"));
+                        const headers = Array.from((rows[0] as any).cells).map((c: any) => c.innerText.trim().toLowerCase());
+                        
+                        const codeIdx = headers.findIndex(h => h.includes("code"));
+                        const nameIdx = headers.findIndex(h => h.includes("paper name") || h.includes("subject"));
+                        const internalIdx = headers.findIndex(h => h.includes("internal"));
+                        const externalIdx = headers.findIndex(h => h.includes("external"));
+                        const totalIdx = headers.findIndex(h => h.includes("total"));
+                        const creditsIdx = headers.findIndex(h => h.includes("credit") || h.includes("cr"));
+
+                        const dataRows = rows.filter(r => {
+                            const cells = (r as any).cells;
+                            return cells.length >= 5 && !isNaN(parseInt(cells[0].innerText.trim()));
                         });
 
-                        console.log(`[Sync] [Parallel] Fetching results for ${option.text}...`);
-                        await newPage.waitForSelector("#euno", { timeout: 10000 });
-                        await newPage.select("#euno", option.value);
-                        
-                        await Promise.all([
-                            newPage.click("input[type='submit'], button.btn-primary, #btnGetResult"),
-                            newPage.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => null)
-                        ]);
+                        return dataRows.map(row => {
+                            const cols = Array.from((row as any).cells).map((c: any) => c.innerText.trim());
+                            return {
+                                code: codeIdx !== -1 ? cols[codeIdx] : cols[1],
+                                name: nameIdx !== -1 ? cols[nameIdx] : cols[2], 
+                                internalMarks: internalIdx !== -1 ? parseFloat(cols[internalIdx]) || 0 : 0,
+                                externalMarks: externalIdx !== -1 ? parseFloat(cols[externalIdx]) || 0 : 0,
+                                marks: totalIdx !== -1 ? parseFloat(cols[totalIdx]) || 0 : 0,
+                                credits: creditsIdx !== -1 ? parseFloat(cols[creditsIdx]) || 4 : 4,
+                                semester: semName
+                            };
+                        });
+                    }, option.text);
 
-                        const semesterData = await newPage.evaluate((semName) => {
-                            const doc = (globalThis as any).document;
-                            const tables = Array.from(doc.querySelectorAll("table")) as any[];
-                            const marksTable = tables.find(t => t.innerText.toLowerCase().includes("paper code") && t.innerText.toLowerCase().includes("total"));
-                            
-                            if (!marksTable) return [];
+                    console.log(`[Sync] Scraped ${semesterData.length} marks for ${option.text}.`);
+                    allScrapedData.push(...semesterData);
 
-                            const rows = Array.from(marksTable.querySelectorAll("tr"));
-                            const headers = Array.from((rows[0] as any).cells).map((c: any) => c.innerText.trim().toLowerCase());
-                            
-                            const codeIdx = headers.findIndex(h => h.includes("code"));
-                            const nameIdx = headers.findIndex(h => h.includes("paper name") || h.includes("subject"));
-                            const internalIdx = headers.findIndex(h => h.includes("internal"));
-                            const externalIdx = headers.findIndex(h => h.includes("external"));
-                            const totalIdx = headers.findIndex(h => h.includes("total"));
-                            const creditsIdx = headers.findIndex(h => h.includes("credit") || h.includes("cr"));
-
-                            const dataRows = rows.filter(r => {
-                                const cells = (r as any).cells;
-                                return cells.length >= 5 && !isNaN(parseInt(cells[0].innerText.trim()));
-                            });
-
-                            return dataRows.map(row => {
-                                const cols = Array.from((row as any).cells).map((c: any) => c.innerText.trim());
-                                return {
-                                    code: codeIdx !== -1 ? cols[codeIdx] : cols[1],
-                                    name: nameIdx !== -1 ? cols[nameIdx] : cols[2], 
-                                    internalMarks: internalIdx !== -1 ? parseFloat(cols[internalIdx]) || 0 : 0,
-                                    externalMarks: externalIdx !== -1 ? parseFloat(cols[externalIdx]) || 0 : 0,
-                                    marks: totalIdx !== -1 ? parseFloat(cols[totalIdx]) || 0 : 0,
-                                    credits: creditsIdx !== -1 ? parseFloat(cols[creditsIdx]) || 4 : 4,
-                                    semester: semName
-                                };
-                            });
-                        }, option.text);
-
-                        return semesterData;
-                    } catch (err) {
-                        console.error(`[Sync] [Parallel] Error fetching ${option.text}:`, err);
-                        return [];
-                    } finally {
-                        await newPage.close().catch(() => {});
-                    }
-                }));
-
-                results.push(...chunkResults.flat());
+                    // Slight delay to be polite to the server
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (semErr: any) {
+                    console.error(`[Sync] Error fetching ${option.text}:`, semErr.message || semErr);
+                }
             }
 
-            allScrapedData.push(...results);
-
-            console.log(`[Sync] Total scraped marks: ${allScrapedData.length}`);
+            console.log(`[Sync] Total scraped marks from portal: ${allScrapedData.length}`);
 
             if (allScrapedData.length === 0) {
                 throw new Error("Could not find any marks data on the portal.");
@@ -342,17 +325,22 @@ export class AcademicSyncService {
 
             // Upsert all subjects first
             for (const item of uniqueSubjects) {
+                // Find credit from syllabus mapping
+                const syllabusInfo = (syllabusCredits as any[]).find(s => s.code === item.code);
+                const finalCredits = syllabusInfo ? syllabusInfo.credits : item.credits;
+                const finalName = syllabusInfo ? syllabusInfo.name : item.name;
+
                 const sub = await tx.subject.upsert({
                     where: { code: item.code },
                     create: {
                         code: item.code,
-                        name: item.name,
-                        credits: item.credits,
+                        name: finalName,
+                        credits: finalCredits,
                         semester: item.semester
                     },
                     update: {
-                        name: item.name,
-                        credits: item.credits,
+                        name: finalName,
+                        credits: finalCredits,
                         semester: item.semester
                     }
                 });
