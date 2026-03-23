@@ -9,9 +9,10 @@ npx tsc
 echo "Installing Chrome for Puppeteer..."
 npx puppeteer browsers install chrome
 
-# Ensure the cache directory exists and is linked if needed
-mkdir -p /opt/render/.cache/puppeteer
+# Install Chrome for Puppeteer to a project-local directory
+echo "Installing Chrome for Puppeteer..."
+PUPPETEER_CACHE_DIR=./.puppeteer-cache npx puppeteer browsers install chrome
 
 # Verify the installation
 echo "Verifying Puppeteer installation..."
-ls -R /opt/render/.cache/puppeteer || echo "Cache directory not found or empty"
+ls -R ./.puppeteer-cache || echo "Local cache directory not found or empty"

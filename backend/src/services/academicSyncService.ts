@@ -19,8 +19,13 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 
 const findChromeInRenderCache = () => {
-    const cacheDir = "/opt/render/.cache/puppeteer/chrome";
-    if (!fs.existsSync(cacheDir)) return null;
+    // Try project-local cache first (installed via build.sh)
+    const localCache = path.join(process.cwd(), ".puppeteer-cache", "chrome");
+    const globalCache = "/opt/render/.cache/puppeteer/chrome";
+    
+    const searchDirs = [localCache, globalCache].filter(d => fs.existsSync(d));
+    
+    if (searchDirs.length === 0) return null;
 
     try {
         // Recursively find the first file named 'chrome'
@@ -37,7 +42,12 @@ const findChromeInRenderCache = () => {
             }
             return null;
         };
-        return findExec(cacheDir);
+
+        for (const dir of searchDirs) {
+            const found = findExec(dir);
+            if (found) return found;
+        }
+        return null;
     } catch (e) {
         console.error("[Sync] Error searching for chrome in cache:", e);
         return null;
