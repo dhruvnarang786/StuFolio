@@ -10,5 +10,8 @@ echo "Installing Chrome for Puppeteer..."
 npx puppeteer browsers install chrome
 
 # Ensure the cache directory exists and is linked if needed
-# (Optional, but helps with discovery)
 mkdir -p /opt/render/.cache/puppeteer
+
+# Verify the installation
+echo "Verifying Puppeteer installation..."
+ls -R /opt/render/.cache/puppeteer || echo "Cache directory not found or empty"
