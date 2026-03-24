@@ -62,7 +62,7 @@ app.listen(PORT, async () => {
     console.log(`   Health check: http://localhost:${PORT}/api/health\n`);
 
     // Pre-launch browser for faster academic sync
-    await AcademicSyncService.warmup();
+    // await AcademicSyncService.warmup();
 });
 
 export default app;

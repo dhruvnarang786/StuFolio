@@ -212,6 +212,12 @@ export class AcademicSyncService {
             if (pageInfo.isLogin) {
                 const errorMsg = pageInfo.error || "Login failed. Please check your credentials and captcha.";
                 console.error(`[Sync] Login failed: ${errorMsg}`);
+                
+                // Capture login failure screenshot for debugging
+                const screenshotPath = path.join(process.cwd(), `sync_error_login_${Date.now()}.png`);
+                await page.screenshot({ path: screenshotPath }).catch(() => {});
+                console.log(`[Sync] Login failure screenshot saved to: ${screenshotPath}`);
+                
                 throw new Error(errorMsg);
             }
 
@@ -241,12 +247,16 @@ export class AcademicSyncService {
                 console.log(`[Sync] Fetching results for ${option.text}...`);
                 
                 try {
+                    console.log(`[Sync]   - Selecting ${option.text}...`);
                     await page.waitForSelector("#euno", { timeout: 10000 });
                     await page.select("#euno", option.value);
                     
+                    console.log(`[Sync]   - Clicking submit for ${option.text}...`);
                     await Promise.all([
-                        page.click("input[type='submit'], button.btn-primary, #btnGetResult"),
-                        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => null)
+                        page.click("input[type='submit'], button.btn-primary, #btnGetResult").catch(() => null),
+                        page.waitForNavigation({ waitUntil: "networkidle2", timeout: 15000 }).catch(() => {
+                            console.warn(`[Sync]   - Navigation timeout for ${option.text}, proceeding to scrape anyway.`);
+                        })
                     ]);
 
                     const semesterData = await page.evaluate((semName) => {
@@ -298,7 +308,12 @@ export class AcademicSyncService {
             console.log(`[Sync] Total scraped marks from portal: ${allScrapedData.length}`);
 
             if (allScrapedData.length === 0) {
-                throw new Error("Could not find any marks data on the portal.");
+                // Capture screenshot when no marks are found
+                const screenshotPath = path.join(process.cwd(), `sync_error_nomarks_${Date.now()}.png`);
+                await page.screenshot({ path: screenshotPath }).catch(() => {});
+                console.log(`[Sync] No marks found screenshot saved to: ${screenshotPath}`);
+                
+                throw new Error("Could not find any marks data on the portal. This could be due to a change in the portal's structure.");
             }
 
             // 5. Update Database
@@ -316,7 +331,7 @@ export class AcademicSyncService {
     private static async updateDatabaseWithScrapedData(studentId: string, data: any[]) {
         console.log(`[Sync] Updating database with ${data.length} records for student ${studentId}...`);
 
-        // 2. Transact all subject upserts and record updates
+        // 2. Transact all subject upserts and record updates with a longer timeout
         await prisma.$transaction(async (tx) => {
             const subjectMap = new Map<string, string>();
 
@@ -328,13 +343,14 @@ export class AcademicSyncService {
             // Re-calculate unique subjects after cleaning
             const uniqueSubjects = Array.from(new Map(data.map(item => [item.code, item])).values());
 
+            console.log(`[Sync] Upserting ${uniqueSubjects.length} unique subjects...`);
+
             // Upsert all subjects first
             for (const item of uniqueSubjects) {
-                // Find credit from syllabus mapping
                 const syllabusInfo = (syllabusCredits as any[]).find(s => 
                     s.code.replace(/-/g, "").toUpperCase() === item.code
                 );
-                const finalCredits = syllabusInfo ? syllabusInfo.credits : item.credits;
+                const finalCredits = syllabusInfo ? syllabusInfo.credits : (item.credits || 4);
                 const finalName = syllabusInfo ? syllabusInfo.name : item.name;
 
                 const sub = await tx.subject.upsert({
@@ -357,18 +373,27 @@ export class AcademicSyncService {
             // 3. Prepare SGPA calculation in memory
             const semDataMap = new Map<string, { totalPoints: number; totalCredits: number; records: any[] }>();
 
+            console.log(`[Sync] Processing marks for academic records...`);
+
             for (const item of data) {
                 const subjectId = subjectMap.get(item.code)!;
+                
+                // Lookup credits AGAIN for the CGPA calculation to be absolutely sure
+                const syllabusInfo = (syllabusCredits as any[]).find(s => 
+                    s.code.replace(/-/g, "").toUpperCase() === item.code
+                );
+                const itemCredits = syllabusInfo ? syllabusInfo.credits : (item.credits || 4);
+                
                 const gp = this.getGradePoint(item.marks);
                 const letterGrade = this.getLetterGrade(item.marks);
 
-                // Add to semester calculation
+                // Add to semester calculation (MOCKED for now as requested)
                 if (!semDataMap.has(item.semester)) {
                     semDataMap.set(item.semester, { totalPoints: 0, totalCredits: 0, records: [] });
                 }
                 const semInfo = semDataMap.get(item.semester)!;
-                semInfo.totalPoints += gp * item.credits;
-                semInfo.totalCredits += item.credits;
+                semInfo.totalPoints += (gp * itemCredits);
+                semInfo.totalCredits += itemCredits;
 
                 // Upsert academic record
                 await tx.academicRecord.upsert({
@@ -398,8 +423,10 @@ export class AcademicSyncService {
                 });
             }
 
-            // 4. Update Semester CGPAs and calculate overall CGPA
+            // 4. Update Semester CGPAs and calculate overall CGPA (DISABLED for now as requested)
+            /*
             const sgpaValues: number[] = [];
+            console.log(`[Sync] Calculating SGPA for ${semDataMap.size} semesters...`);
             for (const [sem, info] of semDataMap.entries()) {
                 const sgpa = info.totalCredits > 0 ? info.totalPoints / info.totalCredits : 0;
                 sgpaValues.push(sgpa);
@@ -420,6 +447,10 @@ export class AcademicSyncService {
                 where: { id: studentId },
                 data: { cgpa: Number(newCGPA.toFixed(2)) }
             });
+            */
+            console.log(`[Sync] Student CGPA update skipped as requested.`);
+        }, {
+            timeout: 60000 // 60 seconds timeout for large data sync
         });
 
         console.log(`[Sync] Database update complete for ${studentId}.`);
