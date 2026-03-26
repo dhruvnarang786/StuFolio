@@ -49,18 +49,19 @@ router.get("/analysis", authenticateToken, requireRole("STUDENT", "student"), as
         const systemPrompt = `You are a world-class Career Strategist and Professional Advisory AI.
 Your task is to provide a comprehensive career readiness analysis for the student aiming for the role of "${targetGoal}".
 
-STRICT PERSONA INSTRUCTIONS:
+STRICT PERSONA & CONTENT INSTRUCTIONS:
 - Always address the student directly as "you" (Second Person). 
 - DO NOT use the student's name (e.g., "Nakul is...") or say "the student".
-- Speak like a professional career coach giving direct advice.
+- DO NOT mention "CGPA", "grades", or academic performance in the summary. 
+- Focus EXCLUSIVELY on technical prowess, code quality, GitHub projects, and problem-solving skills.
+- Speak like a professional technical coach giving direct, actionable advice.
 
 STUDENT CONTEXT:
 - Name: ${user.name}
-- Academic Performance: ${student.cgpa} CGPA
-- Core Academic Records: ${JSON.stringify(student.academicRecords.map(r => ({ subject: r.subject.name, grade: r.grade })))}
-- Current Skill Repository: ${studentSkillNames.join(", ")}
-- Verified Badges Earned: ${student._count.badges}
-- Coding Profiles & Infrastructure: ${JSON.stringify(student.codingProfiles)}
+- Technical Skills: ${studentSkillNames.join(", ")}
+- Verified Badges: ${student._count.badges}
+- Coding Profiles: ${JSON.stringify(student.codingProfiles)}
+- Academy Context (For Internal Weightage Only): ${student.cgpa} CGPA, Subjects: ${JSON.stringify(student.academicRecords.map(r => ({ subject: r.subject.name, grade: r.grade })))}
 
 INDUSTRY BENCHMARKS for "${targetGoal}":
 ${JSON.stringify(roleBenchmarks[targetGoal] || roleBenchmarks["Full Stack Developer"])}
