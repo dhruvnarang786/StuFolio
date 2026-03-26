@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
-    requiredRole?: "STUDENT" | "MENTOR";
+    requiredRole?: "STUDENT" | "FACULTY" | "MENTOR";
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -22,8 +22,14 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
         return <Navigate to="/login" replace />;
     }
 
-    if (requiredRole && user?.role !== requiredRole) {
-        return <Navigate to={user?.role === "MENTOR" ? "/mentor" : "/dashboard"} replace />;
+    // Accept both MENTOR and FACULTY for backward compatibility
+    if (requiredRole) {
+        const userRole = user?.role;
+        const normalizedRequired = requiredRole === "MENTOR" ? "FACULTY" : requiredRole;
+        const normalizedUser = userRole === "MENTOR" ? "FACULTY" : userRole;
+        if (normalizedUser !== normalizedRequired) {
+            return <Navigate to={normalizedUser === "FACULTY" ? "/mentor" : "/dashboard"} replace />;
+        }
     }
 
     return <>{children}</>;

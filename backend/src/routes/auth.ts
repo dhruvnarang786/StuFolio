@@ -23,14 +23,16 @@ const router = Router();
 // POST /api/auth/register
 router.post("/register", async (req: Request, res: Response) => {
     try {
-        const { email, password, name, role, enrollment, section, semester, branch, year, department, designation } = req.body;
+        const { email, password, name, role, enrollment, section, semester, branch, year, department, designation, facultyType } = req.body;
 
         if (!email || !password || !name || !role) {
             return res.status(400).json({ error: "email, password, name, and role are required" });
         }
 
-        if (!["STUDENT", "MENTOR"].includes(role)) {
-            return res.status(400).json({ error: "role must be STUDENT or MENTOR" });
+        // Accept both FACULTY and MENTOR for backward compatibility
+        const normalizedRole = role === "MENTOR" ? "FACULTY" : role;
+        if (!["STUDENT", "FACULTY"].includes(normalizedRole)) {
+            return res.status(400).json({ error: "role must be STUDENT or FACULTY" });
         }
 
         // Check if user exists
@@ -41,13 +43,17 @@ router.post("/register", async (req: Request, res: Response) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Validate facultyType
+        const validFacultyTypes = ["teacher", "mentor", "hod_principal"];
+        const fType = facultyType && validFacultyTypes.includes(facultyType) ? facultyType : "mentor";
+
         const user = await prisma.user.create({
             data: {
                 email,
                 password: hashedPassword,
                 name,
-                role,
-                ...(role === "STUDENT" && {
+                role: normalizedRole,
+                ...(normalizedRole === "STUDENT" && {
                     student: {
                         create: {
                             enrollment: enrollment || `STU-${Date.now()}`,
@@ -58,12 +64,14 @@ router.post("/register", async (req: Request, res: Response) => {
                         },
                     },
                 }),
-                ...(role === "MENTOR" && {
+                ...(normalizedRole === "FACULTY" && {
                     mentor: {
                         create: {
                             department: department || "Computer Science",
                             designation: designation || "Assistant Professor",
                             section: section || "CSE-B",
+                            facultyType: fType,
+                            branch: branch || null,
                         },
                     },
                 }),
@@ -86,6 +94,7 @@ router.post("/register", async (req: Request, res: Response) => {
                 avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
+                facultyType: user.mentor?.facultyType || null,
             },
         });
     } catch (error: any) {
@@ -117,10 +126,15 @@ router.post("/login", async (req: Request, res: Response) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        if (role && user.role !== role) {
-            return res.status(401).json({
-                error: `This account is registered as a ${user.role.toLowerCase()}. Please select the correct portal.`
-            });
+        // Normalize role check: accept both MENTOR and FACULTY
+        if (role) {
+            const normalizedRequestRole = role === "MENTOR" ? "FACULTY" : role;
+            const normalizedUserRole = user.role === "MENTOR" ? "FACULTY" : user.role;
+            if (normalizedUserRole !== normalizedRequestRole) {
+                return res.status(401).json({
+                    error: `This account is registered as a ${user.role.toLowerCase()}. Please select the correct portal.`
+                });
+            }
         }
 
         const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
@@ -131,10 +145,11 @@ router.post("/login", async (req: Request, res: Response) => {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role,
+                role: user.role === "MENTOR" ? "FACULTY" : user.role,
                 avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
+                facultyType: user.mentor?.facultyType || null,
             },
         });
     } catch (error: any) {
@@ -168,10 +183,11 @@ router.get("/me", async (req: Request, res: Response) => {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role,
+                role: user.role === "MENTOR" ? "FACULTY" : user.role,
                 avatarUrl: user.avatarUrl,
                 studentId: user.student?.id,
                 mentorId: user.mentor?.id,
+                facultyType: user.mentor?.facultyType || null,
             },
         });
     } catch (error) {
@@ -326,10 +342,11 @@ router.post("/msal", async (req: Request, res: Response) => {
                         id: user.id,
                         email: user.email,
                         name: user.name,
-                        role: user.role,
+                        role: user.role === "MENTOR" ? "FACULTY" : user.role,
                         avatarUrl: user.avatarUrl,
                         studentId: user.student?.id,
                         mentorId: user.mentor?.id,
+                        facultyType: user.mentor?.facultyType || null,
                     },
                 });
             }

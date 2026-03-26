@@ -8,6 +8,8 @@ interface User {
     role: string;
     studentId?: string;
     mentorId?: string;
+    facultyType?: string;
+    avatarUrl?: string | null;
 }
 
 interface AuthContextType {

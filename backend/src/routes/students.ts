@@ -4,6 +4,8 @@ import { AuthRequest, authenticateToken, requireRole } from "../middleware/auth"
 import { fetchPlatformStats } from "../services/platformFetcher";
 import { refreshStudentProfiles } from "../services/profileService";
 import { updateStudentStreak } from "../services/streakService";
+import { recalculateAndStore, gradeToPoint, calculateSgpaFromResults } from "../services/sgpaService";
+import { fetchIpuResults } from "../services/ipuScraper";
 
 const router = Router();
 
@@ -226,7 +228,7 @@ router.get("/me/attendance", authenticateToken, requireRole("STUDENT"), async (r
     }
 });
 
-// GET /api/students/me/academics — academic records
+// GET /api/students/me/academics — academic records with SGPA/CGPA
 router.get("/me/academics", authenticateToken, requireRole("STUDENT"), async (req: AuthRequest, res: Response) => {
     try {
         const user = await prisma.user.findUnique({
@@ -243,20 +245,198 @@ router.get("/me/academics", authenticateToken, requireRole("STUDENT"), async (re
 
         if (!user?.student) return res.status(404).json({ error: "Student not found" });
 
-        return res.json({
-            semesterCGPAs: user.student.semesterCGPAs.map((sc) => ({ sem: sc.semester, cgpa: sc.cgpa })),
-            records: user.student.academicRecords.map((r) => ({
+        // Group records by semester
+        const bySemester: Record<string, any[]> = {};
+        user.student.academicRecords.forEach(r => {
+            if (!bySemester[r.semester]) bySemester[r.semester] = [];
+            bySemester[r.semester].push({
                 subject: r.subject.name,
                 code: r.subject.code,
+                credits: r.subject.credits,
                 marks: r.marks,
                 maxMarks: r.maxMarks,
                 grade: r.grade,
+                gradePoint: r.gradePoint,
+                semester: r.semester,
+            });
+        });
+
+        return res.json({
+            cgpa: user.student.cgpa,
+            semesterSGPAs: user.student.semesterCGPAs.map(sc => ({
+                semester: sc.semester,
+                sgpa: sc.cgpa,
+            })),
+            records: user.student.academicRecords.map(r => ({
+                subject: r.subject.name,
+                code: r.subject.code,
+                credits: r.subject.credits,
+                marks: r.marks,
+                maxMarks: r.maxMarks,
+                grade: r.grade,
+                gradePoint: r.gradePoint,
                 semester: r.semester,
             })),
+            bySemester,
         });
     } catch (error: any) {
         console.error("Academics error:", error);
         return res.status(500).json({ error: "Failed to load academics" });
+    }
+});
+
+// POST /api/students/me/academic-sync — submit grades for a semester
+router.post("/me/academic-sync", authenticateToken, requireRole("STUDENT"), async (req: AuthRequest, res: Response) => {
+    try {
+        const { semester, grades } = req.body;
+        // grades: [{ subjectCode, grade, marks }]
+
+        if (!semester || !grades || !Array.isArray(grades)) {
+            return res.status(400).json({ error: "semester and grades array are required" });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user!.userId },
+            include: { student: true },
+        });
+
+        if (!user?.student) return res.status(404).json({ error: "Student not found" });
+
+        const studentId = user.student.id;
+
+        // Process each grade entry
+        for (const entry of grades) {
+            const { subjectCode, grade, marks, internalMarks, externalMarks } = entry;
+
+            // Find subject by code
+            const subject = await prisma.subject.findUnique({
+                where: { code: subjectCode },
+            });
+
+            if (!subject) {
+                console.warn(`[Academic Sync] Subject not found: ${subjectCode}`);
+                continue;
+            }
+
+            const gp = grade ? gradeToPoint(grade) : 0;
+
+            await prisma.academicRecord.upsert({
+                where: {
+                    studentId_subjectId_semester: {
+                        studentId,
+                        subjectId: subject.id,
+                        semester,
+                    },
+                },
+                create: {
+                    studentId,
+                    subjectId: subject.id,
+                    semester,
+                    marks: marks || 0,
+                    internalMarks: internalMarks || null,
+                    externalMarks: externalMarks || null,
+                    grade: grade || null,
+                    gradePoint: gp,
+                },
+                update: {
+                    marks: marks || 0,
+                    internalMarks: internalMarks || null,
+                    externalMarks: externalMarks || null,
+                    grade: grade || null,
+                    gradePoint: gp,
+                },
+            });
+        }
+
+        // Recalculate SGPA/CGPA
+        const result = await recalculateAndStore(studentId);
+
+        return res.json({
+            success: true,
+            cgpa: result.cgpa,
+            semesterSGPAs: result.semesterSGPAs,
+        });
+    } catch (error: any) {
+        console.error("Academic sync error:", error);
+        return res.status(500).json({ error: "Failed to sync academic records" });
+    }
+});
+
+// POST /api/students/me/ipu-sync — fetch and sync from IPU portal
+router.post("/me/ipu-sync", authenticateToken, requireRole("STUDENT"), async (req: AuthRequest, res: Response) => {
+    try {
+        const { enrollment, password } = req.body;
+
+        if (!enrollment || !password) {
+            return res.status(400).json({ error: "Enrollment number and IPU portal password are required" });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { id: req.user!.userId },
+            include: { student: true },
+        });
+
+        if (!user?.student) return res.status(404).json({ error: "Student not found" });
+
+        // Fetch results from IPU
+        const externalResults = await fetchIpuResults(enrollment, password);
+
+        if (externalResults.length === 0) {
+            return res.status(404).json({ error: "No results found on the portal for this enrollment number" });
+        }
+
+        const studentId = user.student.id;
+
+        // Sync to database
+        for (const resItem of externalResults) {
+            const subject = await prisma.subject.findUnique({
+                where: { code: resItem.code }, // Updated from subjectCode to code to match Scraper
+            });
+
+            if (!subject) continue;
+
+            const gp = gradeToPoint(resItem.grade);
+
+            await prisma.academicRecord.upsert({
+                where: {
+                    studentId_subjectId_semester: {
+                        studentId,
+                        subjectId: subject.id,
+                        semester: resItem.semester,
+                    },
+                },
+                create: {
+                    studentId,
+                    subjectId: subject.id,
+                    semester: resItem.semester,
+                    marks: resItem.marks,
+                    internalMarks: resItem.internalMarks,
+                    externalMarks: resItem.externalMarks,
+                    grade: resItem.grade,
+                    gradePoint: gp,
+                },
+                update: {
+                    marks: resItem.marks,
+                    internalMarks: resItem.internalMarks,
+                    externalMarks: resItem.externalMarks,
+                    grade: resItem.grade,
+                    gradePoint: gp,
+                },
+            });
+        }
+
+        // Recalculate
+        const { cgpa, semesterSGPAs } = await recalculateAndStore(studentId);
+
+        return res.json({
+            success: true,
+            message: `Successfully synced ${externalResults.length} records.`,
+            cgpa,
+            semesterSGPAs,
+        });
+    } catch (error: any) {
+        console.error("IPU sync error:", error);
+        return res.status(500).json({ error: "Failed to sync with IPU portal" });
     }
 });
 
@@ -510,7 +690,7 @@ router.delete("/me/coding-profiles/:id", authenticateToken, requireRole("STUDENT
 });
 
 // GET /api/students/:id — specific student (for mentors)
-router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/:id", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const start = Date.now();
         console.log(`[PERF] Fetching student detail for ID: ${req.params.id}`);
@@ -575,6 +755,41 @@ router.get("/:id", authenticateToken, requireRole("MENTOR"), async (req: AuthReq
     } catch (error: any) {
         console.error("Student detail error:", error);
         return res.status(500).json({ error: "Failed to load student" });
+    }
+});
+
+/**
+ * POST /api/students/me/ipu-fetch-preview
+ * Fetch results for preview only (does NOT save to DB)
+ */
+router.post("/me/ipu-fetch-preview", authenticateToken, async (req: any, res: any) => {
+    try {
+        const { enrollment, password, semester } = req.body;
+        if (!enrollment || !password || !semester) {
+            return res.status(400).json({ error: "Enrollment, password and semester are required" });
+        }
+
+        // Fetch marks from scraper (simulated/mock for now)
+        const results = await fetchIpuResults(enrollment, password);
+
+        // Filter for specific semester if requested
+        const semesterResults = results.filter(r => r.semester === semester);
+
+        if (semesterResults.length === 0) {
+            return res.status(404).json({ error: "No results found for this semester" });
+        }
+
+        // Calculate preview SGPA
+        const previewSgpa = await calculateSgpaFromResults(semesterResults);
+
+        return res.json({
+            semester,
+            records: semesterResults,
+            previewSgpa
+        });
+    } catch (error: any) {
+        console.error("IPU Fetch Preview Error:", error);
+        return res.status(500).json({ error: error.message || "Failed to fetch results preview" });
     }
 });
 

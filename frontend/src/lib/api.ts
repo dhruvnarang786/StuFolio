@@ -7,6 +7,7 @@ export interface User {
     role: string;
     studentId?: string;
     mentorId?: string;
+    facultyType?: string;
     avatarUrl?: string | null;
 }
 
@@ -37,6 +38,7 @@ export interface Profile {
     cgpa: number;
     rank?: number | null;
     avatarUrl?: string | null;
+    facultyType?: string;
 }
 
 export interface StudentProfileResponse {
@@ -254,10 +256,44 @@ class ApiClient {
         });
     }
 
-    updateStudentAcademics(studentId: string, data: { subjectId: string; marks: number; semester: string }) {
+    updateStudentAcademics(studentId: string, data: { subjectId: string; marks: number; semester: string; grade?: string; gradePoint?: number }) {
         return this.request<unknown>(`/mentor/students/${studentId}/academics`, {
             method: "PATCH",
             body: JSON.stringify(data),
+        });
+    }
+
+    getStudentAcademicDetails(studentId: string) {
+        return this.request<any>(`/mentor/student/${studentId}/academics`);
+    }
+
+    ipuSync(data: { enrollment: string; password: string }) {
+        return this.request<unknown>("/students/me/ipu-sync", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    }
+
+    getSubjectsBySemester(semester: string) {
+        return this.request<any>(`/academics/subjects?semester=${semester}`);
+    }
+
+    async ipuFetchPreview(data: any) {
+        return this.request<unknown>("/students/me/ipu-fetch-preview", {
+            method: "POST",
+            body: JSON.stringify(data),
+        });
+    }
+
+    getFacultyAcademicsAll(params?: { branch?: string; section?: string; semester?: string }) {
+        const query = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
+        return this.request<any>(`/mentor/academics/all${query}`);
+    }
+
+    syncAcademicRecords(semester: string, grades: { subjectCode: string; grade: string; marks?: number; internalMarks?: number; externalMarks?: number }[]) {
+        return this.request<{ success: boolean; cgpa: number; semesterSGPAs: any[] }>("/students/me/academic-sync", {
+            method: "POST",
+            body: JSON.stringify({ semester, grades }),
         });
     }
 

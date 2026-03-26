@@ -3,9 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -14,8 +13,8 @@ model User {
   password      String
   name          String
   role          String
-  avatarUrl     String?
   createdAt     DateTime       @default(now())
+  avatarUrl     String?
   mentor        Mentor?
   notifications Notification[]
   student       Student?
@@ -53,6 +52,8 @@ model Mentor {
   department       String
   designation      String
   section          String
+  facultyType      String            @default("mentor")
+  branch           String?
   dailyAttendances DailyAttendance[]
   user             User              @relation(fields: [userId], references: [id])
 }
@@ -62,6 +63,7 @@ model Subject {
   name             String
   code             String            @unique
   semester         String
+  credits          Int               @default(4)
   academicRecords  AcademicRecord[]
   attendances      Attendance[]
   dailyAttendances DailyAttendance[]
@@ -78,18 +80,22 @@ model SemesterCGPA {
 }
 
 model AcademicRecord {
-  id        String  @id @default(uuid())
-  studentId String
-  subjectId String
-  marks     Float
-  maxMarks  Float   @default(100)
-  grade     String?
-  semester  String
-  student   Student @relation(fields: [studentId], references: [id])
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  id            String  @id @default(uuid())
+  studentId     String
+  subjectId     String
+  marks         Float
+  internalMarks Float?
+  externalMarks Float?
+  maxMarks      Float   @default(100)
+  grade         String?
+  semester      String
+  gradePoint    Float?
+  subject       Subject @relation(fields: [subjectId], references: [id])
+  student       Student @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, subjectId, semester])
 }
+
 
 model Attendance {
   id        String  @id @default(uuid())
@@ -97,8 +103,8 @@ model Attendance {
   subjectId String
   attended  Int
   total     Int
-  student   Student @relation(fields: [studentId], references: [id])
   subject   Subject @relation(fields: [subjectId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, subjectId])
 }
@@ -110,9 +116,9 @@ model DailyAttendance {
   date      DateTime @default(now())
   status    String
   mentorId  String
-  mentor    Mentor   @relation(fields: [mentorId], references: [id])
-  student   Student  @relation(fields: [studentId], references: [id])
   subject   Subject  @relation(fields: [subjectId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id])
+  mentor    Mentor   @relation(fields: [mentorId], references: [id])
 
   @@unique([studentId, subjectId, date])
 }

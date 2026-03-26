@@ -7,12 +7,14 @@ import {
     Search,
     BookOpen,
     Edit3,
-    CheckCircle2
+    CheckCircle2,
+    Plus,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 const MentorAcademicRecordsPage = () => {
@@ -21,7 +23,7 @@ const MentorAcademicRecordsPage = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [selectedStudent, setSelectedStudent] = useState<any>(null);
-    const [marks, setMarks] = useState<Record<string, number>>({});
+    const [marks, setMarks] = useState<Record<string, { marks: number; grade: string }>>({});
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
@@ -56,7 +58,8 @@ const MentorAcademicRecordsPage = () => {
         try {
             await api.updateStudentAcademics(selectedStudent.id, {
                 subjectId,
-                marks: marks[subjectId],
+                marks: marks[subjectId].marks,
+                grade: marks[subjectId].grade,
                 semester: selectedStudent.semester
             });
             toast.success("Marks updated successfully");
@@ -171,23 +174,39 @@ const MentorAcademicRecordsPage = () => {
                                                 <div className="font-semibold text-sm text-foreground truncate">{sub.name}</div>
                                             </div>
                                             <div className="flex items-center gap-3">
-                                                <div className="relative">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-medium text-muted-foreground">Marks (/100)</span>
                                                     <Input
                                                         type="number"
                                                         placeholder="Marks"
                                                         max={100}
                                                         min={0}
-                                                        value={marks[sub.id] ?? ""}
-                                                        onChange={(e) => setMarks(prev => ({ ...prev, [sub.id]: Number(e.target.value) }))}
-                                                        className="w-24 h-10 text-center font-bold"
+                                                        value={marks[sub.id]?.marks ?? ""}
+                                                        onChange={(e) => setMarks(prev => ({ ...prev, [sub.id]: { ...prev[sub.id], marks: Number(e.target.value) } }))}
+                                                        className="w-20 h-9 text-center font-bold"
                                                     />
-                                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-medium text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">/ 100</span>
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] font-medium text-muted-foreground">Grade</span>
+                                                    <Select
+                                                        value={marks[sub.id]?.grade || "A"}
+                                                        onValueChange={(v) => setMarks(prev => ({ ...prev, [sub.id]: { ...prev[sub.id], grade: v } }))}
+                                                    >
+                                                        <SelectTrigger className="w-16 h-9">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {["O", "A+", "A", "B+", "B", "C", "P", "F"].map(g => (
+                                                                <SelectItem key={g} value={g}>{g}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                                 <Button
                                                     size="icon"
-                                                    className="h-10 w-10 rounded-lg shadow-sm"
+                                                    className="h-9 w-9 mt-5 rounded-lg shadow-sm"
                                                     onClick={() => handleSaveMarks(sub.id)}
-                                                    disabled={marks[sub.id] === undefined || submitting}
+                                                    disabled={!marks[sub.id]?.marks || submitting}
                                                 >
                                                     {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                                 </Button>

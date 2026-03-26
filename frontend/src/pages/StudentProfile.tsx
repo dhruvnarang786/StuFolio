@@ -15,9 +15,11 @@ import {
     BookOpen,
     Loader2,
     LucideIcon,
+    ChevronRight,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import api, { StudentProfileResponse, Profile, CodingProfile } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 const iconMap: Record<string, LucideIcon> = {
     Flame, Code, Target, BookOpen, Trophy, GraduationCap, Award, Star,
@@ -156,8 +158,13 @@ const StudentProfile = () => {
                     transition={{ delay: 0.1 }}
                     className="rounded-xl border border-border bg-card p-6"
                 >
-                    <h3 className="font-display font-semibold text-foreground mb-1">Academic Summary</h3>
-                    <p className="text-xs text-muted-foreground mb-4">Semester-wise CGPA progression</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-display font-semibold text-foreground">Academic Summary</h3>
+                        <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1 px-2" onClick={() => window.location.href = "/academics"}>
+                            View Full <ChevronRight className="h-3 w-3" />
+                        </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-4">Semester-wise SGPA progression</p>
                     <div className="space-y-3">
                         {semesterCGPAs.map((s) => (
                             <div key={s.sem} className="flex items-center gap-3">
@@ -170,7 +177,7 @@ const StudentProfile = () => {
                                         className="h-full rounded-full bg-gradient-primary"
                                     />
                                 </div>
-                                <span className="text-xs font-semibold text-foreground w-8 text-right">{s.cgpa}</span>
+                                <span className="text-xs font-semibold text-foreground w-8 text-right">{s.cgpa.toFixed(2)}</span>
                             </div>
                         ))}
                     </div>

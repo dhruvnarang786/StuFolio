@@ -3,6 +3,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 
+import academicsRoutes from "./routes/academics";
 import authRoutes from "./routes/auth";
 import studentRoutes from "./routes/students";
 import mentorRoutes from "./routes/mentor";
@@ -27,9 +28,11 @@ const allowedOrigins = [
     "http://localhost:8080",
     "http://localhost:8081",
     "http://localhost:8082",
+    "http://localhost:8083",
     "http://127.0.0.1:8080",
     "http://127.0.0.1:8081",
     "http://127.0.0.1:8082",
+    "http://127.0.0.1:8083",
     "http://localhost:5173",
     process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
@@ -53,6 +56,7 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/analysis", analysisRoutes);
+app.use("/api/academics", academicsRoutes);
 app.use("/api/chat", chatRoutes);
 
 // Start server

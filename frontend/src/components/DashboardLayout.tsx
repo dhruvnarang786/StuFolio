@@ -36,6 +36,7 @@ const studentNavItems = [
   { icon: Brain, label: "AI Analysis", path: "/ai-analysis" },
   { icon: Calendar, label: "Calendar", path: "/calendar" },
   { icon: BookOpen, label: "Attendance", path: "/attendance" },
+  { icon: GraduationCap, label: "Academic Records", path: "/academics" },
   { icon: Target, label: "Career & Skills", path: "/career" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
@@ -54,7 +55,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
-  role?: "student" | "mentor";
+  role?: "student" | "mentor" | "faculty";
 }
 
 const DashboardLayout = ({ children, title, subtitle, role = "student" }: DashboardLayoutProps) => {
@@ -70,7 +71,7 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
     navigate("/");
   };
 
-  const navItems = role === "mentor" ? mentorNavItems : studentNavItems;
+  const navItems = (role === "mentor" || role === "faculty") ? mentorNavItems : studentNavItems;
 
   useEffect(() => {
     if (location.pathname === "/dashboard" || location.pathname === "/mentor") {
@@ -112,7 +113,7 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
             <Logo
               size="md"
               showText={true}
-              subtitle={role === "mentor" ? "Mentor Panel" : "Student Portal"}
+              subtitle={(role === "mentor" || role === "faculty") ? "Faculty Panel" : "Student Portal"}
               className="flex-1"
             />
           ) : (
@@ -133,8 +134,8 @@ const DashboardLayout = ({ children, title, subtitle, role = "student" }: Dashbo
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
                 className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${active
-                    ? "nav-active-bar"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  ? "nav-active-bar"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                   }`}
               >
                 <item.icon className={`h-[18px] w-[18px] shrink-0 transition-colors ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`} />

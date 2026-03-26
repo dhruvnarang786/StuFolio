@@ -15,6 +15,7 @@ import StudentProfile from "./pages/StudentProfile";
 import AIAnalysis from "./pages/AIAnalysis";
 import CalendarPage from "./pages/CalendarPage";
 import AttendancePage from "./pages/AttendancePage";
+import AcademicsPage from "./pages/AcademicsPage";
 import CareerPage from "./pages/CareerPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import MentorDashboard from "./pages/MentorDashboard";
@@ -22,7 +23,7 @@ import MentorStudentsPage from "./pages/MentorStudentsPage";
 import MentorStudentDetail from "./pages/MentorStudentDetail";
 import MentorAnalytics from "./pages/MentorAnalytics";
 import MentorAttendancePage from "./pages/MentorAttendancePage";
-import MentorAcademicRecordsPage from "./pages/MentorAcademicRecordsPage";
+import HodAcademicView from "./pages/HodAcademicView";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -40,7 +41,8 @@ const RootRoute = () => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={user?.role === "MENTOR" ? "/mentor" : "/dashboard"} replace />;
+    const isFaculty = user?.role === "MENTOR" || user?.role === "FACULTY";
+    return <Navigate to={isFaculty ? "/mentor" : "/dashboard"} replace />;
   }
 
   return <LandingPage />;
@@ -65,18 +67,19 @@ const App = () => (
               <Route path="/ai-analysis" element={<ProtectedRoute requiredRole="STUDENT"><AIAnalysis /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute requiredRole="STUDENT"><AttendancePage /></ProtectedRoute>} />
+              <Route path="/academics" element={<ProtectedRoute requiredRole="STUDENT"><AcademicsPage /></ProtectedRoute>} />
               <Route path="/career" element={<ProtectedRoute requiredRole="STUDENT"><CareerPage /></ProtectedRoute>} />
               <Route path="/leaderboard" element={<ProtectedRoute><LeaderboardPage /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-              {/* Mentor */}
-              <Route path="/mentor" element={<ProtectedRoute requiredRole="MENTOR"><MentorDashboard /></ProtectedRoute>} />
-              <Route path="/mentor/students" element={<ProtectedRoute requiredRole="MENTOR"><MentorStudentsPage /></ProtectedRoute>} />
-              <Route path="/mentor/student-detail" element={<ProtectedRoute requiredRole="MENTOR"><MentorStudentDetail /></ProtectedRoute>} />
-              <Route path="/mentor/attendance" element={<ProtectedRoute requiredRole="MENTOR"><MentorAttendancePage /></ProtectedRoute>} />
-              <Route path="/mentor/academics" element={<ProtectedRoute requiredRole="MENTOR"><MentorAcademicRecordsPage /></ProtectedRoute>} />
-              <Route path="/mentor/analytics" element={<ProtectedRoute requiredRole="MENTOR"><MentorAnalytics /></ProtectedRoute>} />
-              <Route path="/mentor/settings" element={<ProtectedRoute requiredRole="MENTOR"><SettingsPage /></ProtectedRoute>} />
+              {/* Faculty */}
+              <Route path="/mentor" element={<ProtectedRoute requiredRole="FACULTY"><MentorDashboard /></ProtectedRoute>} />
+              <Route path="/mentor/students" element={<ProtectedRoute requiredRole="FACULTY"><MentorStudentsPage /></ProtectedRoute>} />
+              <Route path="/mentor/student-detail" element={<ProtectedRoute requiredRole="FACULTY"><MentorStudentDetail /></ProtectedRoute>} />
+              <Route path="/mentor/attendance" element={<ProtectedRoute requiredRole="FACULTY"><MentorAttendancePage /></ProtectedRoute>} />
+              <Route path="/mentor/academics" element={<ProtectedRoute requiredRole="FACULTY"><HodAcademicView /></ProtectedRoute>} />
+              <Route path="/mentor/analytics" element={<ProtectedRoute requiredRole="FACULTY"><MentorAnalytics /></ProtectedRoute>} />
+              <Route path="/mentor/settings" element={<ProtectedRoute requiredRole="FACULTY"><SettingsPage /></ProtectedRoute>} />
 
               {/* 404 */}
               <Route path="*" element={<NotFound />} />

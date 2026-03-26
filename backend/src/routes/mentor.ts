@@ -3,11 +3,12 @@ import prisma from "../lib/prisma";
 import { Prisma } from "@prisma/client";
 import { AuthRequest, authenticateToken, requireRole } from "../middleware/auth";
 import { sendMail } from "../lib/mailer";
+import { recalculateAndStore, gradeToPoint } from "../services/sgpaService";
 
 const router = Router();
 
 // GET /api/mentor/dashboard — overview stats + student list
-router.get("/dashboard", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/dashboard", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
@@ -116,7 +117,7 @@ router.get("/dashboard", authenticateToken, requireRole("MENTOR"), async (req: A
 });
 
 // GET /api/mentor/students — all students with optional filters
-router.get("/students", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/students", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const { section, semester, search } = req.query;
 
@@ -166,7 +167,7 @@ router.get("/students", authenticateToken, requireRole("MENTOR"), async (req: Au
 });
 
 // GET /api/mentor/subjects — subjects for the mentor's section
-router.get("/subjects", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/subjects", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
@@ -195,7 +196,7 @@ router.get("/subjects", authenticateToken, requireRole("MENTOR"), async (req: Au
 });
 
 // POST /api/mentor/attendance/daily — submit daily attendance
-router.post("/attendance/daily", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.post("/attendance/daily", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const { subjectId, date, records } = req.body; // records: [{studentId, status}]
         const mentor = await prisma.mentor.findUnique({
@@ -285,7 +286,7 @@ router.post("/attendance/daily", authenticateToken, requireRole("MENTOR"), async
 });
 
 // GET /api/mentor/attendance/day — multi-subject grid data
-router.get("/attendance/day", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/attendance/day", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const { date } = req.query;
         if (!date) return res.status(400).json({ error: "Date is required" });
@@ -343,7 +344,7 @@ router.get("/attendance/day", authenticateToken, requireRole("MENTOR"), async (r
 });
 
 // POST /api/mentor/attendance/day — bulk update for all subjects
-router.post("/attendance/day", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.post("/attendance/day", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const { date, records } = req.body; // records: [{studentId, subjectId, status}]
         if (!date || !records) return res.status(400).json({ error: "Date and records are required" });
@@ -460,11 +461,14 @@ router.post("/attendance/day", authenticateToken, requireRole("MENTOR"), async (
     }
 });
 
-// PATCH /api/mentor/students/:id/academics — update student marks
-router.patch("/students/:id/academics", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+// PATCH /api/mentor/students/:id/academics — update student marks with grade and gradePoint
+router.patch("/students/:id/academics", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const studentId = req.params.id as string;
-        const { subjectId, marks, semester } = req.body;
+        const { subjectId, marks, semester, grade, gradePoint } = req.body;
+
+        // Calculate gradePoint from grade if not directly provided
+        const gp = gradePoint !== undefined ? gradePoint : (grade ? gradeToPoint(grade) : undefined);
 
         const record = await prisma.academicRecord.upsert({
             where: {
@@ -479,27 +483,21 @@ router.patch("/students/:id/academics", authenticateToken, requireRole("MENTOR")
                 subjectId: subjectId as string,
                 marks,
                 semester: semester as string,
-                maxMarks: 100
+                maxMarks: 100,
+                grade: grade || null,
+                gradePoint: gp ?? null
             },
             update: {
-                marks
+                marks,
+                ...(grade !== undefined && { grade }),
+                ...(gp !== undefined && { gradePoint: gp })
             }
         });
 
-        // Recalculate CGPA (simplified: average of all records)
-        const allRecords = await prisma.academicRecord.findMany({
-            where: { studentId }
-        });
-        const totalMarksPercent = allRecords.reduce((sum, r) => sum + (r.marks / r.maxMarks), 0);
-        const avgPercent = (totalMarksPercent / allRecords.length) * 100;
-        const newCGPA = Number((avgPercent / 10).toFixed(2)); // basic conversion
+        // Recalculate SGPA/CGPA using proper credit-weighted formula
+        const result = await recalculateAndStore(studentId);
 
-        await prisma.student.update({
-            where: { id: studentId },
-            data: { cgpa: newCGPA }
-        });
-
-        return res.json({ record, newCGPA });
+        return res.json({ record, newCGPA: result.cgpa, semesterSGPAs: result.semesterSGPAs });
     } catch (error: any) {
         console.error("Academic update error:", error);
         return res.status(500).json({ error: "Failed to update marks" });
@@ -507,7 +505,7 @@ router.patch("/students/:id/academics", authenticateToken, requireRole("MENTOR")
 });
 
 // GET /api/mentor/analytics — batch analytics
-router.get("/analytics", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/analytics", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
@@ -563,7 +561,7 @@ router.get("/analytics", authenticateToken, requireRole("MENTOR"), async (req: A
 });
 
 // POST /api/mentor/students/:id/alert — send email alert to student
-router.post("/students/:id/alert", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.post("/students/:id/alert", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const studentId = req.params.id as string;
         const { subject, message } = req.body;
@@ -638,7 +636,7 @@ router.post("/students/:id/alert", authenticateToken, requireRole("MENTOR"), asy
 });
 
 // GET /api/mentor/profile — fetch mentor profile
-router.get("/profile", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.get("/profile", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const mentor = await prisma.mentor.findUnique({
             where: { userId: req.user!.userId },
@@ -665,7 +663,7 @@ router.get("/profile", authenticateToken, requireRole("MENTOR"), async (req: Aut
 });
 
 // PATCH /api/mentor/profile — update mentor profile
-router.patch("/profile", authenticateToken, requireRole("MENTOR"), async (req: AuthRequest, res: Response) => {
+router.patch("/profile", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
     try {
         const { name, teacherId, department, designation, section } = req.body;
         const mentor = await prisma.mentor.findUnique({
@@ -704,6 +702,143 @@ router.patch("/profile", authenticateToken, requireRole("MENTOR"), async (req: A
             return res.status(400).json({ error: "Teacher ID already exists" });
         }
         return res.status(500).json({ error: "Failed to update mentor profile" });
+    }
+});
+
+// GET /api/mentor/student/:studentId/academics — semester-wise academic records for a student
+router.get("/student/:studentId/academics", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
+    try {
+        const { studentId } = req.params;
+        const { semester } = req.query;
+
+        const student = await prisma.student.findUnique({
+            where: { id: studentId },
+            include: {
+                user: { select: { name: true, email: true, avatarUrl: true } },
+                semesterCGPAs: { orderBy: { semester: "asc" } },
+            },
+        });
+
+        if (!student) return res.status(404).json({ error: "Student not found" });
+
+        // Get academic records, optionally filtered by semester
+        const where: any = { studentId };
+        if (semester) where.semester = semester as string;
+
+        const records = await prisma.academicRecord.findMany({
+            where,
+            include: { subject: true },
+            orderBy: { subject: { code: "asc" } },
+        });
+
+        // Group by semester
+        const bySemester: Record<string, any[]> = {};
+        records.forEach(r => {
+            if (!bySemester[r.semester]) bySemester[r.semester] = [];
+            bySemester[r.semester].push({
+                subjectCode: r.subject.code,
+                subjectName: r.subject.name,
+                credits: r.subject.credits,
+                marks: r.marks,
+                maxMarks: r.maxMarks,
+                grade: r.grade,
+                gradePoint: r.gradePoint,
+            });
+        });
+
+        return res.json({
+            student: {
+                id: student.id,
+                name: (student as any).user.name,
+                enrollment: student.enrollment,
+                section: student.section,
+                branch: student.branch,
+                semester: student.semester,
+                cgpa: student.cgpa,
+            },
+            semesterSGPAs: (student as any).semesterCGPAs.map((s: any) => ({
+                semester: s.semester,
+                sgpa: s.cgpa,
+            })),
+            academicRecords: bySemester,
+        });
+    } catch (error: any) {
+        console.error("Student academic view error:", error);
+        return res.status(500).json({ error: "Failed to load student academics" });
+    }
+});
+
+// GET /api/mentor/academics/all — HOD/Principal view: all students filtered by branch/section/semester
+router.get("/academics/all", authenticateToken, requireRole("MENTOR", "FACULTY"), async (req: AuthRequest, res: Response) => {
+    try {
+        const mentor = await prisma.mentor.findUnique({
+            where: { userId: req.user!.userId },
+        });
+
+        if (!mentor) return res.status(404).json({ error: "Faculty not found" });
+
+        // Only HOD/Principal can see all students; mentors/teachers can only see their section
+        const isHod = mentor.facultyType === "hod_principal";
+
+        const { branch, section, semester } = req.query;
+
+        const where: Prisma.StudentWhereInput = {};
+        if (!isHod) {
+            // Restrict to mentor's section
+            where.section = mentor.section;
+        } else {
+            // HOD can filter by branch, section, semester
+            if (branch) where.branch = branch as string;
+            if (section) where.section = section as string;
+            if (semester) where.semester = semester as string;
+        }
+
+        const students = await prisma.student.findMany({
+            where,
+            include: {
+                user: { select: { name: true, avatarUrl: true } },
+                semesterCGPAs: { orderBy: { semester: "asc" } },
+            },
+            orderBy: { enrollment: "asc" },
+        });
+
+        // Calculate stats for the branch
+        const totalStudents = students.length;
+        const averageCgpa = totalStudents > 0
+            ? students.reduce((sum, s) => sum + s.cgpa, 0) / totalStudents
+            : 0;
+
+        // Pass percentage (CGPA >= 5.0)
+        const passedCount = students.filter(s => s.cgpa >= 5.0).length;
+        const passPercentage = totalStudents > 0
+            ? Math.round((passedCount / totalStudents) * 100)
+            : 0;
+
+        return res.json({
+            isHod,
+            stats: {
+                averageCgpa,
+                totalStudents,
+                passPercentage,
+            },
+            students: students.map(s => ({
+                id: s.id,
+                name: s.user.name,
+                avatarUrl: s.user.avatarUrl,
+                enrollment: s.enrollment,
+                section: s.section,
+                branch: s.branch,
+                semester: s.semester,
+                cgpa: s.cgpa,
+                semesterSGPAs: s.semesterCGPAs.map(sc => ({
+                    semester: sc.semester,
+                    sgpa: sc.cgpa,
+                })),
+            })),
+        });
+    } catch (error: any) {
+        console.error("HOD academics view error:", error);
+        return res.status(500).json({ error: "Failed to load academic records" });
     }
 });
 

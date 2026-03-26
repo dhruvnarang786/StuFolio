@@ -15,6 +15,7 @@ import {
   Sparkles,
   Loader2,
   Trophy,
+  ChevronRight,
 } from "lucide-react";
 import {
   AreaChart,
@@ -31,6 +32,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import api from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 const iconMap: Record<string, any> = {
   TrendingUp, Code, GraduationCap, Flame, Target, Award, BookOpen, CheckCircle, Trophy,
@@ -144,11 +146,11 @@ const StudentDashboard = () => {
     const base = data?.statCards
       ? data.statCards.map((s: any) => ({ ...s, icon: iconMap[s.icon] || TrendingUp }))
       : [
-          { label: "Performance Index", value: "—", change: "Loading...", icon: TrendingUp, accent: "primary" },
-          { label: "Current CGPA",      value: "—", change: "Loading...", icon: GraduationCap, accent: "accent" },
-          { label: "Problems Solved",   value: "—", change: "Loading...", icon: Code,         accent: "chart-3" },
-          { label: "Day Streak",        value: "—", change: "Loading...", icon: Flame,         accent: "warning" },
-        ];
+        { label: "Performance Index", value: "—", change: "Loading...", icon: TrendingUp, accent: "primary" },
+        { label: "Current CGPA", value: data?.profile?.cgpa?.toFixed(2) || "—", change: <Button variant="link" size="sm" className="h-auto p-0 text-xs text-accent" onClick={() => window.location.href = "/academics"}>View Details <ChevronRight className="h-3 w-3" /></Button>, icon: GraduationCap, accent: "accent" },
+        { label: "Problems Solved", value: "—", change: "Loading...", icon: Code, accent: "chart-3" },
+        { label: "Day Streak", value: "—", change: "Loading...", icon: Flame, accent: "warning" },
+      ];
 
     return base.map((s: any) => {
       if (s.label === "Problems Solved" && totalProblemsSolved !== null)
@@ -196,7 +198,7 @@ const StudentDashboard = () => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     const dayOfWeek = today.getDay(); // 0 (Sun) to 6 (Sat)
-    
+
     // Start of the grid (Sunday, 52 weeks ago)
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - dayOfWeek - (52 * 7));
@@ -205,7 +207,7 @@ const StudentDashboard = () => {
       for (let di = 0; di < 7; di++) {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + (wi * 7) + di);
-        
+
         const y = currentDate.getFullYear();
         const m = String(currentDate.getMonth() + 1).padStart(2, '0');
         const d = String(currentDate.getDate()).padStart(2, '0');
@@ -244,9 +246,8 @@ const StudentDashboard = () => {
             variants={fadeUp}
             initial="hidden"
             animate="visible"
-            className={`rounded-xl border border-border p-5 text-card-foreground shadow-sm bg-card card-hover ${
-              i === 1 || i === 3 ? "tech-card" : ""
-            }`}
+            className={`rounded-xl border border-border p-5 text-card-foreground shadow-sm bg-card card-hover ${i === 1 || i === 3 ? "tech-card" : ""
+              }`}
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-medium text-muted-foreground">{stat.label}</span>
@@ -484,11 +485,10 @@ const StudentDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className={`flex items-center gap-3 rounded-xl p-3.5 text-sm ${
-                w.type === "danger"
-                  ? "bg-destructive/10 border border-destructive/20 text-destructive"
-                  : "bg-warning/10 border border-warning/20 text-warning"
-              }`}
+              className={`flex items-center gap-3 rounded-xl p-3.5 text-sm ${w.type === "danger"
+                ? "bg-destructive/10 border border-destructive/20 text-destructive"
+                : "bg-warning/10 border border-warning/20 text-warning"
+                }`}
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>{w.text}</span>

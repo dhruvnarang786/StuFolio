@@ -14,7 +14,7 @@ import Logo from "@/components/Logo";
 const LoginPage = () => {
   const { instance } = useMsal();
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState<"student" | "mentor">("student");
+  const [role, setRole] = useState<"student" | "faculty">("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -24,12 +24,13 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [msalLoading, setMsalLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [facultyType, setFacultyType] = useState("mentor");
   const navigate = useNavigate();
   const { login, msalLogin, register, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      navigate(user.role === "MENTOR" ? "/mentor" : "/dashboard");
+      navigate(user.role === "FACULTY" ? "/mentor" : "/dashboard");
     }
 
     // Check for errors from main.tsx (MSAL redirect handling)
@@ -47,19 +48,20 @@ const LoginPage = () => {
 
     try {
       if (isLogin) {
-        await login(email, password, role === "student" ? "STUDENT" : "MENTOR");
+        await login(email, password, role === "student" ? "STUDENT" : "FACULTY");
       } else {
         await register({
           email,
           password,
           name,
-          role: role === "student" ? "STUDENT" : "MENTOR",
+          role: role === "student" ? "STUDENT" : "FACULTY",
           enrollment: role === "student" ? enrollment : undefined,
           section: section || undefined,
+          facultyType: role === "faculty" ? facultyType : undefined,
         });
       }
 
-      if (role === "mentor") {
+      if (role === "faculty") {
         navigate("/mentor");
       } else {
         navigate("/dashboard");
@@ -159,14 +161,14 @@ const LoginPage = () => {
               Student
             </button>
             <button
-              onClick={() => setRole("mentor")}
-              className={`flex-1 flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${role === "mentor"
+              onClick={() => setRole("faculty")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-xl border p-3.5 text-sm font-medium transition-all ${role === "faculty"
                 ? "border-primary bg-primary/10 text-primary shadow-sm"
                 : "border-border text-muted-foreground hover:border-primary/30 hover:bg-secondary/50"
                 }`}
             >
               <Users className="h-4 w-4" />
-              Mentor
+              Faculty
             </button>
           </div>
 
@@ -243,6 +245,21 @@ const LoginPage = () => {
                   required
                   className="bg-secondary/50 border-border text-foreground h-11 rounded-xl"
                 />
+              </div>
+            )}
+
+            {!isLogin && role === "faculty" && (
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Faculty Role</Label>
+                <select
+                  value={facultyType}
+                  onChange={(e) => setFacultyType(e.target.value)}
+                  className="w-full bg-secondary/50 border border-border text-foreground h-11 rounded-xl px-3 text-sm"
+                >
+                  <option value="teacher">Teacher</option>
+                  <option value="mentor">Mentor</option>
+                  <option value="hod_principal">HOD / Principal</option>
+                </select>
               </div>
             )}
 
